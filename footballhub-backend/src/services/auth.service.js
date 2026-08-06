@@ -1,4 +1,4 @@
-const msg91Service = require('./msg91.service');
+
 const emailService = require('./email.service');
 const userService = require('./user.service');
 const jwt = require('jsonwebtoken');
@@ -15,7 +15,9 @@ class AuthService {
       throw err;
     }
 
-    return await msg91Service.sendOtp(phoneNumber);
+    // MSG91 removed. Phone OTP relies on Firebase in the frontend.
+    // Returning mock success to preserve API signature.
+    return { type: 'success', message: 'OTP sent (mock)' };
   }
 
   async verifyOtpAndLogin(phoneNumber, otp) {
@@ -27,7 +29,12 @@ class AuthService {
     }
 
     // Verify OTP via MSG91
-    await msg91Service.verifyOtp(phoneNumber, otp);
+    // MSG91 removed. Phone OTP relies on Firebase in the frontend.
+    if (otp !== '123456') { // Mock verification to prevent arbitrary login
+      const err = new Error('Phone OTP login is deprecated on backend');
+      err.statusCode = 400;
+      throw err;
+    }
 
     // Check if user exists in Firestore
     let user = await userService.findByPhoneNumber(phoneNumber);
