@@ -13,10 +13,15 @@ const app = express();
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors({
+const corsOptions = {
   origin: ['http://localhost:5174', 'https://dribbl.net', 'https://www.dribbl.net'],
-  credentials: true
-})); // Enable CORS
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Explicitly handle preflight requests
 app.use(express.json()); // Parse JSON payloads
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev')); // Logging
