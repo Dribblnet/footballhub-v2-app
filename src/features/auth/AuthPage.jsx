@@ -121,7 +121,7 @@ export default function AuthPage() {
     };
   }, []);
 
-  // --- PHONE FLOW (Dormant, preserved for future SMS architecture) ---
+  // --- PHONE FLOW ---
   const handleSendPhoneOtp = async (e) => {
     e.preventDefault();
     if (phone.length < 5) return toast.error("Enter a valid phone number");
@@ -145,11 +145,13 @@ export default function AuthPage() {
       if (!document.getElementById("recaptcha-container")) throw new Error("recaptcha-container is missing from DOM");
       if (!window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-          size: "normal", 
+          size: "invisible", 
           callback: () => addLog("RECAPTCHA SUCCESS"),
           'expired-callback': () => {
-            window.recaptchaVerifier.clear();
-            window.recaptchaVerifier = null;
+            if (window.recaptchaVerifier) {
+              window.recaptchaVerifier.clear();
+              window.recaptchaVerifier = null;
+            }
           }
         });
         await window.recaptchaVerifier.render();
@@ -161,14 +163,22 @@ export default function AuthPage() {
       setExistingPlayer(getPlayerByPhone(fullPhone) || null);
       setStep("PHONE_OTP");
     } catch (err) {
-      console.error("FIREBASE EXECUTION FAILURE:", err);
+      console.error("FIREBASE EXECUTION FAILURE:", err, { code: err.code, message: err.message });
       if (window.recaptchaVerifier) {
         try { window.recaptchaVerifier.clear(); } catch(err2){ console.warn(err2); }
         window.recaptchaVerifier = null;
         const container = document.getElementById("recaptcha-container");
         if (container) container.innerHTML = "";
       }
-      toast.error(`Firebase Auth Error: ${err.code || 'unknown'}`);
+      
+      let errorMessage = "Authentication failed. Please try again.";
+      if (err.code === "auth/invalid-phone-number") errorMessage = "Invalid phone number.";
+      else if (err.code === "auth/too-many-requests") errorMessage = "Too many requests. Try again later.";
+      else if (err.code === "auth/unauthorized-domain") errorMessage = "This domain is not authorized in Firebase Console.";
+      else if (err.code === "auth/billing-not-enabled") errorMessage = "Firebase Phone Auth requires a Blaze (Pay-as-you-go) billing account.";
+      else if (err.code) errorMessage = `Firebase Auth Error: ${err.code}`;
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +244,7 @@ export default function AuthPage() {
       console.log("2 Before fetch");
       
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
       
       const response = await fetch(`${API_URL}/auth/send-email-otp`, {
         method: "POST",
@@ -275,10 +285,17 @@ export default function AuthPage() {
       setOtpState("OTP_SENT");
       console.log("9 OTP state updated");
     } catch (err) {
+      console.error("EMAIL OTP EXECUTION FAILURE:", err, { code: err.code, message: err.message });
       if (err.name === 'AbortError') {
         toast.error("OTP request timed out. Please check your connection.");
       } else {
-        toast.error("Unable to send verification code. Please try again.");
+        if (import.meta.env.DEV && err.message) {
+          toast.error(`[Dev] ${err.message}`);
+        } else {
+          // In production, display the server message if it's safe, otherwise generic fallback
+          const isInternalError = err.message && (err.message.toLowerCase().includes('internal') || err.message.toLowerCase().includes('invalid `to` field') || err.message.toLowerCase().includes('resend'));
+          toast.error(isInternalError ? "Unable to send verification code. Please try again." : (err.message || "Unable to send verification code. Please try again."));
+        }
       }
       setOtpState("ERROR");
     } finally {
@@ -302,7 +319,7 @@ export default function AuthPage() {
       console.log(`[AUTH DEBUG] API request started to ${API_URL}/auth/verify-email-otp. Payload:`, { email: normalizedEmail, otp });
       
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
       const res = await fetch(`${API_URL}/auth/verify-email-otp`, {
         method: "POST",
@@ -350,10 +367,18 @@ export default function AuthPage() {
     } catch (err) {
       if (err.name === 'AbortError') {
         console.error(`[NETWORK ERROR] Fetch timeout for ${API_URL}/auth/verify-email-otp.`);
-        toast.error("OTP request timed out. Please check your connection.");
+        toast.error("Verification timed out. Please check your connection.");
       } else {
         console.error(`[NETWORK ERROR] Fetch failed for ${API_URL}/auth/verify-email-otp.`);
         console.error(`[AUTH DEBUG] Error in handleVerifyEmailOtp:`, err);
+        
+        if (import.meta.env.DEV && err.message) {
+          toast.error(`[Dev] ${err.message}`);
+        } else {
+          // Display the backend message if it's safe (e.g. "OTP has expired", "Incorrect OTP")
+          const isInternalError = err.message && (err.message.toLowerCase().includes('internal') || err.message.toLowerCase().includes('resend'));
+          toast.error(isInternalError ? "Verification failed. Please try again." : (err.message || "Incorrect OTP. Please try again."));
+        }
       }
       const fails = recordFailedAttempt();
       if (fails >= 5) {
@@ -362,9 +387,13 @@ export default function AuthPage() {
         setOtp("");
         console.log(`[AUTH DEBUG] Step changed to ERROR (Too many fails)`);
       } else {
-        toast.error(err.message || `Invalid OTP. You have ${5 - fails} attempts left.`);
+        // If it's just an incorrect OTP, don't change state to ERROR which kicks them out of the form
+        // We already displayed the toast above, but let's add the remaining attempts info
+        const msg = err.message || "Invalid OTP";
+        toast.error(`${msg}. You have ${5 - fails} attempts left.`);
+        setOtp("");
         setOtpState("OTP_SENT");
-        console.log(`[AUTH DEBUG] Step reverted to OTP_SENT (Failed attempt)`);
+        console.log(`[AUTH DEBUG] Step reverted to OTP_SENT (Failed attempt: ${fails})`);
       }
     } finally {
       if (timeoutId) clearTimeout(timeoutId);

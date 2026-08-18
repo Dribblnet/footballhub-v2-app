@@ -32,15 +32,21 @@ class AuthController {
       console.log("REQUEST ARRIVAL");
       const { email } = req.body;
       
-      // Wrap service call in a 10-second timeout to prevent hanging connections
+      console.log(`[AUTH DIAGNOSTICS] Request started for sendEmailOtp. Email: ${email.replace(/(?<=^.{2}).*(?=@)/, '***')}`);
+      const startTime = Date.now();
+      
+      // Wrap service call in a 25-second timeout to allow for slower external API responses
+      // without keeping the client hanging indefinitely.
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Email service timeout')), 10000)
+        setTimeout(() => reject(new Error('Email service timeout - Resend took too long')), 25000)
       );
       
       const response = await Promise.race([
         authService.sendEmailOtp(email),
         timeoutPromise
       ]);
+      
+      console.log(`[AUTH DIAGNOSTICS] Backend request completed successfully in ${Date.now() - startTime}ms`);
       
       if (res.headersSent) return;
       const responseObj = {
@@ -54,6 +60,7 @@ class AuthController {
       return;
     } catch (error) {
       if (res.headersSent) return;
+      console.error(`[AUTH DIAGNOSTICS] Backend error: ${error.message}`);
       return next(error);
     }
   }

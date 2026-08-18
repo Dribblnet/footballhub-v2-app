@@ -103,16 +103,23 @@ class EmailService {
     `;
 
     try {
-      console.log(`[EMAIL SEND] Sending email to ${email} with OTP ${otp}`);
+      console.log(`[AUTH DIAGNOSTICS] Resend request started for: ${email.replace(/(?<=^.{2}).*(?=@)/, '***')}`);
+      const resendStartTime = Date.now();
+      
       const response = await resend.emails.send({
         from: 'Dribbl.net <noreply@dribbl.net>',
         to: email,
         subject: subject,
         html: htmlBody,
       });
-      console.log('[RESEND EXACT RESPONSE]:', JSON.stringify(response, null, 2));
+      
+      console.log(`[AUTH DIAGNOSTICS] Resend response received in ${Date.now() - resendStartTime}ms`);
+      if (response && response.data) {
+         console.log(`[AUTH DIAGNOSTICS] Resend ID: ${response.data.id}`);
+      }
       
       if (response.error) {
+        console.error(`[AUTH DIAGNOSTICS] Resend Error: ${response.error.message}`);
         throw new Error(response.error.message || 'Failed to send email via Resend');
       }
       

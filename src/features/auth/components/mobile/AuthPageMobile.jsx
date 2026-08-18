@@ -62,9 +62,9 @@ export default function AuthPageMobile({
         <div 
           id="recaptcha-container" 
           style={{ 
-            marginBottom: "20px", 
-            display: import.meta.env.DEV && (step === "PHONE_INPUT" || step === "PHONE_OTP") ? "block" : "none",
-            minHeight: "50px"
+            width: 0,
+            height: 0,
+            overflow: "hidden"
           }}
         ></div>
 
@@ -116,10 +116,9 @@ export default function AuthPageMobile({
             <button className="btn-primary" onClick={() => setStep("EMAIL_AUTH")} style={{ width: "100%", height: "56px", borderRadius: "14px", fontSize: "16px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <Mail size={18} /> Continue with Email
             </button>
-            <button disabled style={{ width: "100%", height: "56px", borderRadius: "14px", fontSize: "16px", fontWeight: "600", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", color: "#475569", cursor: "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <button onClick={() => setStep("PHONE_INPUT")} style={{ width: "100%", height: "56px", borderRadius: "14px", fontSize: "16px", fontWeight: "600", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <Phone size={18} /> Continue with Phone Number
             </button>
-            <p style={{ margin: "-8px 0 0 0", fontSize: "12px", color: "#64748b" }}>* SMS verification coming soon.</p>
           </div>
         )}
 

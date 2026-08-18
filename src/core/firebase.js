@@ -24,6 +24,10 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
 // Ensure initializeApp is only called ONCE
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 console.log("🔥 FIREBASE INIT: App Initialized successfully.");
+console.log("🔥 FIREBASE CONFIG DUMP:", {
+  ...firebaseConfig,
+  apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 5)}...${firebaseConfig.apiKey.substring(firebaseConfig.apiKey.length - 4)}` : undefined
+});
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
