@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import BrandLogo from "../BrandLogo";
 
 const IMAGES = {
-  stadium: "https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?auto=format&fit=crop&q=80",
+  stadium: "/hero.png",
   boots: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80",
   run: "https://images.unsplash.com/photo-1431324155629-1a6d0a6ebbfc?auto=format&fit=crop&q=80",
   strike: "https://images.unsplash.com/photo-1508344928928-7137b29de216?auto=format&fit=crop&q=80",

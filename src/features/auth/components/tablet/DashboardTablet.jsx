@@ -53,7 +53,7 @@ export default function DashboardTablet({
       <header style={{
         display: "flex", flexDirection: "column", justifyContent: "flex-end",
         padding: "40px", marginBottom: "40px", borderRadius: "24px",
-        background: "linear-gradient(to top, rgba(9, 14, 23, 1) 0%, rgba(9, 14, 23, 0.4) 50%, rgba(9, 14, 23, 0.1) 100%), url('https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?auto=format&fit=crop&q=80') center/cover",
+        background: "linear-gradient(to top, rgba(9, 14, 23, 1) 0%, rgba(9, 14, 23, 0.4) 50%, rgba(9, 14, 23, 0.1) 100%), url('/hero.png') center/cover",
         boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
         minHeight: "320px", position: "relative", overflow: "hidden"
       }}>

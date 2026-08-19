@@ -53,7 +53,7 @@ export default function DashboardMobile({
       <header style={{
         display: "flex", flexDirection: "column",
         padding: "12px", marginBottom: "20px", borderRadius: "16px",
-        background: "linear-gradient(to top, rgba(9, 14, 23, 1) 0%, rgba(9, 14, 23, 0.4) 50%, rgba(9, 14, 23, 0.1) 100%), url('https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?auto=format&fit=crop&q=80') center/cover",
+        background: "linear-gradient(to top, rgba(9, 14, 23, 1) 0%, rgba(9, 14, 23, 0.4) 50%, rgba(9, 14, 23, 0.1) 100%), url('/hero.png') center/cover",
         position: "relative", overflow: "hidden"
       }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.25), transparent 60%)", pointerEvents: "none" }}></div>
