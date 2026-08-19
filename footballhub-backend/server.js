@@ -67,6 +67,18 @@ app.get('/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is running', timestamp: new Date() });
 });
 
+// Root route for Render health checks
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: "FootballHub Backend",
+    status: "healthy"
+  });
+});
+app.head('/', (req, res) => {
+  res.status(200).end();
+});
+
 // Handle 404
 app.use((req, res, next) => {
   const err = new Error('Route not found');
