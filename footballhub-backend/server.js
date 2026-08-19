@@ -21,7 +21,6 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Explicitly handle preflight requests
 app.use(express.json()); // Parse JSON payloads
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev')); // Logging
