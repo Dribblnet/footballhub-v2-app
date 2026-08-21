@@ -78,6 +78,20 @@ class AuthController {
     }
   }
 
+  async resetPassword(req, res, next) {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!newPassword || newPassword.length < 6) {
+         throw new Error("Password must be at least 6 characters.");
+      }
+      await authService.resetPasswordWithOtp(email, otp, newPassword);
+      return successResponse(res, { success: true }, 'Password updated successfully');
+    } catch (error) {
+      console.error(`[AUTH CONTROLLER] Error resetting password: ${req.body.email}`, error);
+      next(error);
+    }
+  }
+
   async getMe(req, res, next) {
     try {
       const { uid } = req.user; // Attached by auth middleware

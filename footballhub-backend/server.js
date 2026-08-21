@@ -8,6 +8,7 @@ const { apiLimiter } = require('./src/middleware/rateLimit.middleware');
 
 // Routes
 const authRoutes = require('./src/routes/auth.routes');
+const feedbackRoutes = require('./src/routes/feedback.routes');
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api', apiLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

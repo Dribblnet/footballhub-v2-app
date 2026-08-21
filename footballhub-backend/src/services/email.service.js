@@ -129,6 +129,42 @@ class EmailService {
       throw error;
     }
   }
+
+  /**
+   * Sends a feedback email from a user
+   * @param {Object} feedbackData
+   */
+  async sendFeedbackEmail(feedbackData) {
+    const { type, message, name, email } = feedbackData;
+    const subject = `Dribbl Feedback — [${type}]`;
+    const htmlBody = `
+      <h3>New Feedback Received</h3>
+      <p><strong>Name:</strong> ${name || 'Anonymous'}</p>
+      <p><strong>Email:</strong> ${email || 'Not provided'}</p>
+      <p><strong>Type:</strong> ${type}</p>
+      <p><strong>Message:</strong></p>
+      <blockquote style="white-space: pre-wrap;">${message}</blockquote>
+      <p><strong>Date:</strong> ${new Date().toISOString()}</p>
+    `;
+
+    try {
+      const response = await resend.emails.send({
+        from: 'Dribbl.net Feedback <noreply@dribbl.net>',
+        to: 'dribblnet@gmail.com',
+        reply_to: email || undefined,
+        subject: subject,
+        html: htmlBody,
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to send feedback email');
+      }
+      return response;
+    } catch (error) {
+      console.error('Error sending feedback email:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new EmailService();

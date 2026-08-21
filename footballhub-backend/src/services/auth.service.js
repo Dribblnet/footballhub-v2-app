@@ -112,6 +112,39 @@ class AuthService {
     };
   }
 
+  async resetPasswordWithOtp(email, otp, newPassword) {
+    if (!email || !otp || !newPassword) {
+      const err = new Error('Email, OTP, and newPassword are required');
+      err.statusCode = 400;
+      err.name = 'ValidationError';
+      throw err;
+    }
+
+    const verificationResult = emailService.verifyOtp(email, otp);
+    if (!verificationResult.success) {
+      const err = new Error(verificationResult.message || 'Invalid or expired OTP');
+      err.statusCode = 400;
+      err.name = 'ValidationError';
+      throw err;
+    }
+
+    // Now securely update Firebase Auth password
+    const { admin } = require('../config/firebase');
+    try {
+      const userRecord = await admin.auth().getUserByEmail(email);
+      await admin.auth().updateUser(userRecord.uid, { password: newPassword });
+      console.log(`[AUTH SERVICE] Password reset successful for: ${email}`);
+      return { success: true };
+    } catch (firebaseError) {
+      console.error(`[AUTH SERVICE] Error updating Firebase password for ${email}:`, firebaseError);
+      if (firebaseError.code === 'auth/user-not-found') {
+         // Security: Don't leak whether user exists, just pretend it worked
+         return { success: true }; 
+      }
+      throw new Error('Failed to update password securely.');
+    }
+  }
+
   generateToken(user) {
     return jwt.sign(
       {
