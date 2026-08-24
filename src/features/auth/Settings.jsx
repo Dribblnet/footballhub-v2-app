@@ -9,41 +9,42 @@ import { ArrowLeft, Phone, Mail, Link as LinkIcon, ShieldCheck } from "lucide-re
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../context/ToastContext";
 import VerifiedBadge from "../../components/VerifiedBadge";
+import EditProfileModal from "./components/settings/modals/EditProfileModal";
+import { EmailModal, PhoneModal, PasswordModal } from "./components/settings/modals/SecurityModals";
+import FeedbackModal from "../../components/layout/FeedbackModal";
 
 export default function Settings() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { updatePlayerIdentity, getPlayerByPhone, getPlayerByEmail, players } = usePlayers();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const fullPlayer = players.find(p => p.id === user.id) || user;
 
-  const [linkModal, setLinkModal] = useState(null); // 'PHONE' or 'EMAIL'
-  const [linkInput, setLinkInput] = useState("");
-  const [linkCountryCode, setLinkCountryCode] = useState("+91");
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
-  const handleLinkAccount = () => {
-    if (linkModal === "PHONE") {
-      if (linkInput.length < 5) return toast.error("Enter valid phone");
-      const fullPhone = `${linkCountryCode} ${linkInput}`;
-      if (getPlayerByPhone(fullPhone)) return toast.error("This phone is already registered to another player.");
-      updatePlayerIdentity(user.id, { phone: fullPhone, phoneNumber: fullPhone, phoneVerified: true, isVerified: true });
-      updateUser({ phone: fullPhone, phoneNumber: fullPhone, phoneVerified: true, isVerified: true });
-    } else if (linkModal === "EMAIL") {
-      if (!linkInput.includes("@")) return toast.error("Enter valid email");
-      if (getPlayerByEmail(linkInput)) return toast.error("This email is already registered to another player.");
-      updatePlayerIdentity(user.id, { email: linkInput, emailVerified: true, isVerified: true });
-      updateUser({ email: linkInput, emailVerified: true, isVerified: true });
+  const handleDeleteAccount = () => {
+    if (deleteConfirmationText.toLowerCase() !== "delete my account") {
+      return toast.error("Please type the confirmation phrase exactly.");
     }
-    setLinkModal(null);
-    setLinkInput("");
-    toast.success("Account linked successfully! Your identities are now merged.");
+    // Simulate backend deletion processing
+    toast.success("Account deletion request submitted. Logging you out...");
+    setTimeout(async () => {
+      await logout();
+      window.location.href = "/";
+    }, 1500);
   };
-
 
   const controllerProps = {
     user,
     updateUser,
+    logout,
     updatePlayerIdentity,
     getPlayerByPhone,
     getPlayerByEmail,
@@ -51,20 +52,30 @@ export default function Settings() {
     navigate,
     toast,
     fullPlayer,
-    linkModal,
-    setLinkModal,
-    linkInput,
-    setLinkInput,
-    linkCountryCode,
-    setLinkCountryCode,
-    handleLinkAccount
+    setShowEditProfile,
+    setShowEmailModal,
+    setShowPhoneModal,
+    setShowPasswordModal,
+    setShowFeedbackModal,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    deleteConfirmationText,
+    setDeleteConfirmationText,
+    handleDeleteAccount
   };
 
   return (
-    <ResponsiveView
-      mobile={<SettingsMobile {...controllerProps} />}
-      tablet={<SettingsTablet {...controllerProps} />}
-      desktop={<SettingsDesktop {...controllerProps} />}
-    />
+    <>
+      <ResponsiveView
+        mobile={<SettingsMobile {...controllerProps} />}
+        tablet={<SettingsTablet {...controllerProps} />}
+        desktop={<SettingsDesktop {...controllerProps} />}
+      />
+      {showEditProfile && <EditProfileModal onClose={() => setShowEditProfile(false)} />}
+      {showEmailModal && <EmailModal onClose={() => setShowEmailModal(false)} />}
+      {showPhoneModal && <PhoneModal onClose={() => setShowPhoneModal(false)} />}
+      {showPasswordModal && <PasswordModal onClose={() => setShowPasswordModal(false)} />}
+      {showFeedbackModal && <FeedbackModal onClose={() => setShowFeedbackModal(false)} />}
+    </>
   );
 }

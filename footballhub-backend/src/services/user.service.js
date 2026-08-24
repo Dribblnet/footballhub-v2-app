@@ -32,6 +32,18 @@ class UserService {
     return { id: doc.id, ...doc.data() };
   }
 
+  async updateUser(uid, data) {
+    const userRef = db.collection(this.collection).doc(uid);
+    // Remove id from data if it exists to avoid overwriting doc id
+    const { id, ...updateData } = data;
+    await userRef.set({
+      ...updateData,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    
+    return this.findById(uid);
+  }
+
   async createUser(phoneNumber) {
     // Generate a unique UID
     const newDocRef = db.collection(this.collection).doc();
@@ -95,6 +107,35 @@ class UserService {
     
     // We return the simulated created object, but without the server Timestamp 
     // exact value since it's computed on the server.
+    return { id: uid, ...userData, createdAt: new Date(), updatedAt: new Date() };
+  }
+
+  async createUserByEmailWithUid(email, uid) {
+    const newDocRef = db.collection(this.collection).doc(uid);
+
+    const userData = {
+      uid,
+      email,
+      displayName: null,
+      age: null,
+      preferredPosition: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      totalMatches: 0,
+      goals: 0,
+      assists: 0,
+      yellowCards: 0,
+      redCards: 0,
+      cleanSheets: 0,
+      hatTricks: 0,
+      playerOfTheMatchAwards: 0,
+      ratingAverage: 0.0,
+      isVerified: true, // Verified by OTP
+      role: 'PLAYER',
+    };
+
+    await newDocRef.set(userData);
+    
     return { id: uid, ...userData, createdAt: new Date(), updatedAt: new Date() };
   }
 }

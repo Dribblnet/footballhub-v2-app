@@ -14,5 +14,6 @@ router.post('/reset-password', otpVerifyLimiter, authController.resetPassword);
 
 // Protected routes
 router.get('/me', authMiddleware, authController.getMe);
+router.put('/me', authMiddleware, authController.updateMe);
 
 module.exports = router;

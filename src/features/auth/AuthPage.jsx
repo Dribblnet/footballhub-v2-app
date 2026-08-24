@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { usePlayers } from "../../context/PlayerContext";
 import { Target, Phone, KeyRound, User, Mail, Link as LinkIcon, ArrowRight, ArrowLeft } from "lucide-react";
-import { auth, googleProvider, RecaptchaVerifier } from "../../core/firebase";
-import { signInWithPopup, signInWithPhoneNumber } from "firebase/auth";
+import { auth, RecaptchaVerifier } from "../../core/firebase";
+import { updateProfile, signInWithCustomToken, signInWithPopup, signInWithPhoneNumber, createUserWithEmailAndPassword, signInWithEmailAndPassword, getAdditionalUserInfo } from "firebase/auth";
+import { db } from "../../core/firebase";
+import { doc, serverTimestamp, query, where, collection, getDocs } from "firebase/firestore";
 import { useToast } from "../../context/ToastContext";
 import { useRateLimit } from "./useRateLimit";
 import ResponsiveView from "../../components/layout/ResponsiveView";
@@ -12,7 +14,7 @@ import AuthPageMobile from "./components/mobile/AuthPageMobile";
 import AuthPageTablet from "./components/tablet/AuthPageTablet";
 import AuthPageDesktop from "./components/desktop/AuthPageDesktop";
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = import.meta.env.PROD ? (import.meta.env.VITE_API_URL || "/api") : "/api";
 
 const Card = ({ children }) => (
   <div className="glass-panel" style={{ 
@@ -50,7 +52,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function AuthPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { getPlayerByPhone, getPlayerByEmail, registerPlayer, updatePlayerIdentity } = usePlayers();
   const { toast } = useToast();
   
@@ -70,12 +72,17 @@ export default function AuthPage() {
   const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => localStorage.getItem("dribbl_saved_email") || "");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [country, setCountry] = useState("India");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
   const [preferredFoot, setPreferredFoot] = useState("");
   const [position, setPosition] = useState("");
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
@@ -83,6 +90,8 @@ export default function AuthPage() {
   const [authMethod, setAuthMethod] = useState(null); 
   const [authMode, setAuthMode] = useState(null); // 'SIGN_UP' or 'LOG_IN'
   const [existingPlayer, setExistingPlayer] = useState(null);
+  const [authUid, setAuthUid] = useState(null);
+  const [backendToken, setBackendToken] = useState(null);
   const [, setIsFirebaseVerified] = useState(false);
   const [isLoading, _setIsLoading] = useState(false);
 
@@ -91,7 +100,7 @@ export default function AuthPage() {
     _setIsLoading(newIsLoading);
   };
   
-  const rateLimitId = step === "PHONE_INPUT" ? `phone_${countryCode}${phone}` : step === "EMAIL_AUTH" ? `email_${(email || "").toLowerCase().trim()}` : null;
+  const rateLimitId = (step === "PHONE_INPUT" || step === "PHONE_OTP") ? `phone_${countryCode}${phone}` : (step === "EMAIL_AUTH" || step === "OTP_VERIFICATION" || step === "FORGOT_PASSWORD") ? `email_${(email || "").toLowerCase().trim()}` : null;
   const { 
     isRateLimited, remainingRequests, countdownString, recordRequest, applyBackendRateLimit,
     isLockedOut, lockoutString, recordFailedAttempt, applyBackendLockout
@@ -280,7 +289,9 @@ export default function AuthPage() {
       toast.success("OTP sent to your email!");
       
       console.log("7 Before setStep");
-      setStep("OTP_VERIFICATION");
+      if (step !== "FORGOT_PASSWORD") {
+        setStep("OTP_VERIFICATION");
+      }
       console.log("8 After setStep");
       setOtpState("OTP_SENT");
       console.log("9 OTP state updated");
@@ -324,7 +335,7 @@ export default function AuthPage() {
       const res = await fetch(`${API_URL}/auth/verify-email-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, otp }),
+        body: JSON.stringify({ email: normalizedEmail, otp, isSignup: authMode === "SIGN_UP", password }),
         signal: controller.signal
       });
       
@@ -353,13 +364,75 @@ export default function AuthPage() {
       setIsFirebaseVerified(true);
       console.log(`[AUTH DEBUG] Step changed to VERIFIED`);
       
-      if (!data.data?.isNewUser) {
-        const player = getPlayerByEmail(normalizedEmail);
-        if (player) {
-          updatePlayerIdentity(player.id, { isVerified: true, emailVerified: true });
-          login({ ...player, isVerified: true, emailVerified: true });
-        } else {
+      if (step === "FORGOT_PASSWORD") {
+        return;
+      }
+      
+      if (authMode === "SIGN_UP") {
+        try {
+          if (!data.data?.firebaseToken) throw new Error("Missing authentication token from server");
+          const userCred = await signInWithCustomToken(auth, data.data.firebaseToken);
+          setAuthUid(userCred.user.uid);
+          setBackendToken(data.data.token);
+
+          localStorage.setItem("dribbl_saved_email", normalizedEmail);
           setStep("NEW_PROFILE");
+        } catch (err) {
+          toast.error(err.message || "Signup failed");
+        }
+      } else if (authMode === "LOG_IN" || !data.data?.isNewUser) {
+        let firestoreUid = null;
+        if (data.data?.firebaseToken) {
+          try {
+            const userCred = await signInWithCustomToken(auth, data.data.firebaseToken);
+            firestoreUid = userCred.user.uid;
+          } catch (authErr) {
+            console.error("Failed to sign into Firebase Auth with custom token:", authErr);
+            toast.error("Authentication mapping failed. Please contact support.");
+            return;
+          }
+        }
+        
+        const backendUser = data.data?.user;
+        let profileData = null;
+        let finalUid = firestoreUid || backendUser?.uid || data.data?.player?.id;
+        let backendToken = data.data?.token;
+
+        if (finalUid) {
+          try {
+            const fetchToken = backendToken || (auth.currentUser ? await auth.currentUser.getIdToken() : null);
+            if (fetchToken) {
+              const res = await fetch(`${API_URL}/auth/me`, {
+                headers: { Authorization: `Bearer ${fetchToken}` }
+              });
+              if (res.ok) {
+                const meData = await res.json();
+                profileData = meData.data;
+                finalUid = profileData.id || profileData.uid || finalUid;
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to fetch from backend API during OTP login", e);
+          }
+        }
+        
+        const player = profileData || getPlayerByEmail(normalizedEmail) || backendUser || data.data?.player;
+        if (player) {
+          if (player.id) {
+            updatePlayerIdentity(player.id, { isVerified: true, emailVerified: true });
+          }
+          login({ ...player, isVerified: true, emailVerified: true, id: finalUid || player.id, token: backendToken });
+        } else {
+          login({ 
+            id: finalUid || crypto.randomUUID(),
+            email: normalizedEmail,
+            isVerified: true, 
+            emailVerified: true,
+            name: normalizedEmail.split('@')[0] || "Dribbl Player",
+            phone: "",
+            position: "",
+            token: backendToken
+          });
         }
       } else {
         setStep("NEW_PROFILE");
@@ -401,68 +474,109 @@ export default function AuthPage() {
     }
   };
 
+  
+  const handleEmailPasswordAuth = async (e) => {
+    e.preventDefault();
+    const normalizedEmail = (email || "").toLowerCase().trim();
+    if (!normalizedEmail.includes("@")) return toast.error("Enter a valid email address");
+
+    if (authMode === "SIGN_UP") {
+      if (password.length < 6) return toast.error("Password must be at least 6 characters");
+      // DO NOT create Firebase account yet. Validate and trigger OTP flow instead.
+      await handleSendEmailOtp(e);
+    } else {
+      if (!password) return toast.error("Please enter your password");
+      setIsLoading(true);
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        localStorage.setItem("dribbl_saved_email", normalizedEmail);
+        
+        const uid = userCredential.user.uid;
+        const firebaseToken = await userCredential.user.getIdToken();
+        
+        let profileData = null;
+        let profileId = uid;
+        try {
+          const res = await fetch(`${API_URL}/auth/me`, {
+             headers: { Authorization: `Bearer ${firebaseToken}` }
+          });
+          if (res.ok) {
+             const meData = await res.json();
+             profileData = meData.data;
+             profileId = profileData.id || profileData.uid || uid;
+             
+             if (profileData.backendToken) {
+                setBackendToken(profileData.backendToken);
+             }
+             
+             if (auth.currentUser && !auth.currentUser.displayName && profileData.displayName) {
+               await updateProfile(auth.currentUser, { displayName: profileData.displayName }).catch(() => {});
+             }
+          }
+        } catch (apiErr) {
+          console.warn("Failed to fetch user from backend API", apiErr);
+        }
+        
+        const player = profileData || getPlayerByEmail(normalizedEmail);
+        const tokenToSave = profileData?.backendToken || firebaseToken;
+        
+        if (player) {
+          updatePlayerIdentity(player.id || profileId, { isVerified: true, emailVerified: true });
+          login({ ...player, isVerified: true, emailVerified: true, id: profileId, token: tokenToSave });
+        } else {
+          login({ 
+            id: uid,
+            email: normalizedEmail,
+            isVerified: true, 
+            emailVerified: true,
+            name: userCredential.user.displayName || "Dribbl Player",
+            phone: "",
+            position: "",
+            token: tokenToSave
+          });
+        }
+      } catch (err) {
+        toast.error("Invalid email or password.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: (email || "").toLowerCase().trim(), otp, newPassword: password })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Password reset failed");
+      
+      toast.success("Your password has been updated successfully. You can now log in with your new password.");
+      setStep("AUTH_HOME");
+      setOtp("");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      toast.error(err.message || "Failed to reset password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- PHONE FLOW HELPERS ---
   const handleFailedAttempt = (customMessage = null) => {
     // Legacy fallback for Phone/Google if they call this
     toast.error(customMessage || "Authentication failed.");
   };
 
-  // --- GOOGLE FLOW ---
-  const handleGoogleAuth = async (e) => {
-    e.preventDefault();
-    setAuthMethod("GOOGLE");
-    setIsLoading(true);
-    
-    let verifiedEmail;
 
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      verifiedEmail = result.user.email;
-    } catch (err) {
-      console.warn("Firebase Google Auth failed.", err);
-      toast.error("Google Authentication failed.");
-    } finally {
-      setIsLoading(false);
-    }
-    
-    if (!verifiedEmail) return;
-
-    setIsFirebaseVerified(true);
-    setEmail(verifiedEmail); 
-
-    const player = getPlayerByEmail(verifiedEmail);
-    if (player) {
-      updatePlayerIdentity(player.id, { isVerified: true, emailVerified: true });
-      login({ ...player, isVerified: true, emailVerified: true });
-    } else {
-      setStep("LINK_PROMPT");
-    }
-  };
-
-  // --- LINKING FLOWS ---
-  const handleLinkPhoneSubmit = async (e) => {
-    e.preventDefault();
-    const fullPhone = `${countryCode}${phone}`.replace(/\s+/g, '');
-    const player = getPlayerByPhone(fullPhone);
-    if (player) {
-      updatePlayerIdentity(player.id, { email: email, isVerified: true, emailVerified: true }); 
-      login({ ...player, email: email, isVerified: true, emailVerified: true });
-    } else {
-      toast.error("No account found with this phone number.");
-    }
-  };
-
-  const handleLinkGoogleSubmit = async (e) => {
-    e.preventDefault();
-    const player = getPlayerByEmail(email);
-    if (player) {
-      const fullPhone = `${countryCode}${phone}`.replace(/\s+/g, '');
-      updatePlayerIdentity(player.id, { phone: fullPhone, phoneNumber: fullPhone, isVerified: true, phoneVerified: true }); 
-      login({ ...player, phone: fullPhone, phoneNumber: fullPhone, isVerified: true, phoneVerified: true });
-    } else {
-      toast.error("No account found with this email.");
-    }
-  };
 
   // --- NEW PROFILE FLOW ---
   const navigate = useNavigate();
@@ -471,48 +585,38 @@ export default function AuthPage() {
     e.preventDefault();
     if (isCompletingProfile) return;
     
-    console.log("Button clicked");
+    console.log("[SIGNUP] 1. profile submission started");
     
     try {
       setIsCompletingProfile(true);
-      if (!firstName.trim() || !lastName.trim()) {
-        toast.error("Please enter your full name");
-        console.warn("Validation failed: Missing name");
-        return;
-      }
-      if (!age || isNaN(age) || age < 1 || age > 100) {
-        toast.error("Please enter a valid age");
-        console.warn("Validation failed: Invalid age");
-        return;
-      }
-      if (!gender) {
-        toast.error("Please select a gender");
-        console.warn("Validation failed: Missing gender");
-        return;
-      }
-      if (!position) {
-        toast.error("Please select a preferred position");
-        console.warn("Validation failed: Missing position");
-        return;
-      }
-      if (!country) {
-        toast.error("Please select a country");
-        console.warn("Validation failed: Missing country");
-        return;
-      }
+      if (!firstName.trim() || !lastName.trim()) return toast.error("Please enter your full name");
+      if (!age || isNaN(age) || age < 1 || age > 100) return toast.error("Please enter a valid age");
+      if (!gender) return toast.error("Please select a gender");
+      if (!position) return toast.error("Please select a preferred position");
+      if (!country) return toast.error("Please select a country");
 
-      console.log("Validation passed");
-      console.log("Profile save started");
-
-      const fullPhone = phone ? `${phone}`.replace(/\s+/g, '') : null;
+      const fullPhone = phone ? `${countryCode}${phone}`.replace(/\s+/g, '') : null;
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
-      console.log("Backend request");
-      // Simulated backend request since it's local for now
-      await new Promise(r => setTimeout(r, 300));
-      console.log("Backend response");
+      console.log("[SIGNUP] 2. currentUser retrieved:", auth.currentUser);
+      
+      if (!auth.currentUser) {
+        throw new Error("Authentication session lost. Please log in again.");
+      }
+      
+      console.log("[SIGNUP] 3. currentUser.uid:", auth.currentUser.uid);
+      console.log("[SIGNUP] 4. Firebase auth state:", auth.currentUser.toJSON());
 
-      const newPlayer = registerPlayer({
+      if (auth.currentUser) {
+        console.log("[SIGNUP] 9. updateProfile started");
+        await updateProfile(auth.currentUser, { displayName: fullName });
+        console.log("[SIGNUP] 10. updateProfile completed");
+      }
+
+      const uid = auth.currentUser.uid;
+
+      const playerData = {
+        id: uid,
         name: fullName,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -521,28 +625,84 @@ export default function AuthPage() {
         emailVerified: true,
         phoneNumber: fullPhone,
         phoneCountryCode: countryCode,
-        phoneVerified: false,
+        phoneVerified: !!fullPhone,
         dob: null, 
         age: parseInt(age),
         gender: gender,
-        country: country,
+        country: country, state: state, city: city,
         preferredFoot: preferredFoot,
         position: position,
         authMethod: authMethod || "EMAIL",
-        isVerified: true 
+        isVerified: true
+      };
+
+      console.log("[SIGNUP] 5. Sending profile to backend via API...");
+      
+      const tokenToUse = backendToken || user?.token;
+      if (!tokenToUse) {
+        throw new Error("Authentication token not found. Please log in again.");
+      }
+
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenToUse}`
+        },
+        body: JSON.stringify(playerData)
       });
       
-      console.log("Player created:", newPlayer);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to save profile to server");
+      }
       
-      login(newPlayer);
-      console.log("Navigation");
-      navigate("/");
+      const { data: savedData } = await res.json();
+      console.log("[SIGNUP] 8c. verified data:", savedData);
+
+      console.log("[SIGNUP] 11. profile context updated");
+      // Use registerPlayer if we want to save to local PlayerContext, but AuthContext is the main one
+      const newPlayer = registerPlayer({ ...savedData, createdAt: Date.now() });
+      console.log("[SIGNUP] 12. navigation started");
+      navigate("/", { replace: true });
+      login({ ...newPlayer, token: backendToken || user?.token });
+      console.log("[SIGNUP] 13. navigation completed");
+
     } catch (err) {
-      console.error("Profile creation failed:", err);
-      toast.error(err.message || "Failed to save profile. Please try again.");
+      console.error("[SIGNUP] PROFILE SAVE FAILED:", err);
+      toast.error(err.message || "Couldn't save your profile. Please check your connection and try again.");
+      // Do not navigate. Let them retry.
     } finally {
       setIsCompletingProfile(false);
     }
+  };
+
+  if (import.meta.env.DEV) {
+    window.TEST_SAVE = handleCompleteRegistration;
+    window.JUMP_TO_PROFILE = () => {
+      setStep("NEW_PROFILE");
+      setFirstName("John");
+      setLastName("Doe");
+      setAge("19");
+      setGender("Male");
+      setPosition("Forward");
+      setCountry("India");
+      setPreferredFoot("Right");
+    };
+  }
+
+  const handleLinkPhoneSubmit = async (e) => {
+    e.preventDefault();
+    if (!phone) return toast.error("Please enter a valid phone number");
+    
+    // The user is trying to link an existing phone profile to their new email account.
+    // If we wanted to ensure the phone exists first, we could do:
+    // const fullPhone = `${countryCode}${phone}`.replace(/\s+/g, '');
+    // const p = getPlayerByPhone(fullPhone);
+    // if (!p) return toast.error("No existing profile found with that phone number.");
+    
+    // For now, simply send OTP so they can verify ownership of the phone
+    await handleSendPhoneOtp(e);
   };
 
   const renderRateLimitMessage = () => {
@@ -558,13 +718,13 @@ export default function AuthPage() {
 
   const controllerProps = {
     step, setStep, otpState, setOtpState, countryCode, setCountryCode, phone, setPhone,
-    otp, setOtp, email, setEmail, firstName, setFirstName, lastName, setLastName,
-    age, setAge, gender, setGender, country, setCountry, preferredFoot, setPreferredFoot,
+    otp, setOtp, email, setEmail, password, setPassword, confirmPassword, setConfirmPassword, showPassword, setShowPassword, firstName, setFirstName, lastName, setLastName,
+    age, setAge, gender, setGender, country, setCountry, state, setState, city, setCity, preferredFoot, setPreferredFoot,
     position, setPosition, isCompletingProfile, authMode, setAuthMode, isLoading, setIsLoading,
     isRateLimited, countdownString, isLockedOut, lockoutString,
-    handleSendEmailOtp, handleVerifyEmailOtp, handleGoogleAuth, handleSendPhoneOtp,
-    handleVerifyPhoneOtp, handleLinkPhoneSubmit, handleLinkGoogleSubmit, handleCompleteRegistration,
-    renderRateLimitMessage
+    handleSendEmailOtp, handleVerifyEmailOtp, handleSendPhoneOtp,
+    handleVerifyPhoneOtp, handleLinkPhoneSubmit, handleCompleteRegistration,
+    renderRateLimitMessage, handleEmailPasswordAuth, handleForgotPasswordSubmit
   };
 
   return (

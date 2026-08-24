@@ -74,7 +74,7 @@ class AuthService {
     return { success: true, message: 'Email OTP sent successfully' };
   }
 
-  async verifyEmailOtpAndLogin(email, otp) {
+  async verifyEmailOtpAndLogin(email, otp, isSignup = false, password = null) {
     if (!email || !otp) {
       const err = new Error('Email and OTP are required');
       err.statusCode = 400;
@@ -93,21 +93,66 @@ class AuthService {
     console.log(`[AUTH SERVICE DEBUG] Firestore lookup for email: ${email}`);
     let user = await userService.findByEmail(email);
     let isNewUser = false;
+    let token = null;
+    let firebaseToken = null;
+    const { auth } = require('../config/firebase');
 
     if (!user) {
-      console.log(`[AUTH SERVICE DEBUG] Creating new user for email: ${email}`);
-      user = await userService.createUserByEmail(email);
-      isNewUser = true;
+      if (isSignup) {
+        console.log(`[AUTH SERVICE DEBUG] Creating new user in backend for email: ${email}`);
+        
+        let firebaseUser;
+        try {
+          if (!password) throw new Error("Password is required for signup");
+          firebaseUser = await auth.createUser({ email, password });
+        } catch (err) {
+          if (err.code === 'auth/email-already-exists') {
+            firebaseUser = await auth.getUserByEmail(email);
+          } else {
+            console.error(`[AUTH SERVICE ERROR] Failed to create Firebase user:`, err);
+            const createErr = new Error(err.message || 'Failed to create user account');
+            createErr.statusCode = 400;
+            throw createErr;
+          }
+        }
+        
+        user = await userService.createUserByEmailWithUid(email, firebaseUser.uid);
+        isNewUser = true;
+      } else {
+        // Attempt to sync from Firebase Auth if they exist there but not in Firestore
+        try {
+          const firebaseUser = await auth.getUserByEmail(email);
+          console.log(`[AUTH SERVICE DEBUG] User found in Firebase Auth but missing in Firestore. Syncing profile for: ${email}`);
+          user = await userService.createUserByEmailWithUid(email, firebaseUser.uid);
+        } catch (authErr) {
+          // User does not exist in Firebase Auth either.
+          console.error(`[AUTH SERVICE DEBUG] User not found in Firebase Auth: ${email}`);
+          const err = new Error('No account found. Please sign up first.');
+          err.statusCode = 404;
+          throw err;
+        }
+      }
     } else {
-      console.log(`[AUTH SERVICE DEBUG] Existing user found: ${user.uid}`);
+      console.log(`[AUTH SERVICE DEBUG] Existing user found in Firestore: ${user.uid}`);
     }
 
-    console.log(`[AUTH SERVICE DEBUG] JWT creation for uid: ${user.uid}`);
-    const token = this.generateToken(user);
+    console.log(`[AUTH SERVICE DEBUG] JWT & Custom Token creation for uid: ${user.uid}`);
+    token = this.generateToken(user);
+    try {
+      firebaseToken = await auth.createCustomToken(user.uid);
+    } catch (tokenErr) {
+      console.error(`[AUTH SERVICE ERROR] Failed to create Firebase Custom Token:`, tokenErr);
+      const err = new Error('Failed to generate secure login session.');
+      err.statusCode = 500;
+      throw err;
+    }
+
+    emailService.deleteOtp(email);
 
     return {
       user,
       token,
+      firebaseToken,
       isNewUser,
     };
   }
@@ -134,11 +179,13 @@ class AuthService {
       const userRecord = await admin.auth().getUserByEmail(email);
       await admin.auth().updateUser(userRecord.uid, { password: newPassword });
       console.log(`[AUTH SERVICE] Password reset successful for: ${email}`);
+      emailService.deleteOtp(email);
       return { success: true };
     } catch (firebaseError) {
       console.error(`[AUTH SERVICE] Error updating Firebase password for ${email}:`, firebaseError);
       if (firebaseError.code === 'auth/user-not-found') {
          // Security: Don't leak whether user exists, just pretend it worked
+         emailService.deleteOtp(email);
          return { success: true }; 
       }
       throw new Error('Failed to update password securely.');

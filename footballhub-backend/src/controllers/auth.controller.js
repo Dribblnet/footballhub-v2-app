@@ -67,11 +67,11 @@ class AuthController {
 
   async verifyEmailOtp(req, res, next) {
     try {
-      const { email, otp } = req.body;
-      console.log(`[AUTH CONTROLLER] Received verifyEmailOtp request for email: ${email}, otp: ${otp}`);
-      const { user, token, isNewUser } = await authService.verifyEmailOtpAndLogin(email, otp);
+      const { email, otp, isSignup, password } = req.body;
+      console.log(`[AUTH CONTROLLER] Received verifyEmailOtp request for email: ${email}, otp: ${otp}, isSignup: ${isSignup}`);
+      const { user, token, firebaseToken, isNewUser } = await authService.verifyEmailOtpAndLogin(email, otp, isSignup, password);
       console.log(`[AUTH CONTROLLER] Verification successful for email: ${email}`);
-      return successResponse(res, { user, token, isNewUser }, 'Email OTP verified successfully');
+      return successResponse(res, { user, token, firebaseToken, isNewUser }, 'Email OTP verified successfully');
     } catch (error) {
       console.error(`[AUTH CONTROLLER] Error verifying OTP for email: ${req.body.email}`, error);
       next(error);
@@ -96,17 +96,43 @@ class AuthController {
     try {
       const { uid } = req.user; // Attached by auth middleware
       
-      const user = await userService.findById(uid);
+      let user = await userService.findById(uid);
       
+      if (!user && req.user.email) {
+        // MIGRATION: Check if they exist by email under a legacy ID
+        const legacyUser = await userService.findByEmail(req.user.email);
+        if (legacyUser) {
+           console.log(`[AUTH CONTROLLER] Migrating legacy user ${legacyUser.id} to canonical UID ${uid}`);
+           user = await userService.updateUser(uid, { ...legacyUser, id: uid, migratedAt: new Date() });
+        }
+      }
+
       if (!user) {
-        const err = new Error('User not found');
-        err.statusCode = 404;
-        err.errorCode = 'USER_NOT_FOUND';
-        throw err;
+         return res.json({ success: true, data: { id: uid, email: req.user.email }});
       }
       
-      return successResponse(res, user, 'User retrieved successfully');
+      const backendToken = require('../services/auth.service').generateToken(user);
+      
+      return successResponse(res, { ...user, backendToken }, 'Profile retrieved successfully');
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateMe(req, res, next) {
+    try {
+      const { uid } = req.user;
+      
+      if (!req.body || Object.keys(req.body).length === 0) {
+        const err = new Error('Invalid profile data');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const updatedUser = await userService.updateUser(uid, req.body);
+      return successResponse(res, updatedUser, 'Profile updated successfully');
+    } catch (error) {
+      console.error(`[AUTH CONTROLLER] Error updating profile for uid: ${req.user?.uid}`, error);
       next(error);
     }
   }

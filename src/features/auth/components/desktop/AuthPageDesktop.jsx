@@ -1,5 +1,6 @@
 import React from "react";
-import { Target, Phone, KeyRound, User, Mail, Link as LinkIcon, ArrowRight, ArrowLeft } from "lucide-react";
+import { INDIA_LOCATIONS, STATES } from "../../../../utils/indiaLocations";
+import { Target, Phone, KeyRound, User, Mail, Link as LinkIcon, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import CountrySelector from "../settings/CountrySelector";
 import BrandLogo from "../../../../components/BrandLogo";
 
@@ -38,14 +39,14 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default function AuthPageTablet({
+export default function AuthPageDesktop({
   step, setStep, otpState, setOtpState, countryCode, setCountryCode, phone, setPhone,
-  otp, setOtp, email, setEmail, firstName, setFirstName, lastName, setLastName,
-  age, setAge, gender, setGender, country, setCountry, preferredFoot, setPreferredFoot,
+  otp, setOtp, email, setEmail, password, setPassword, confirmPassword, setConfirmPassword, showPassword, setShowPassword, firstName, setFirstName, lastName, setLastName,
+  age, setAge, gender, setGender, country, setCountry, state, setState, city, setCity, preferredFoot, setPreferredFoot,
   position, setPosition, isCompletingProfile, authMode, setAuthMode, isLoading, setIsLoading,
   isRateLimited, countdownString, isLockedOut, lockoutString,
-  handleSendEmailOtp, handleVerifyEmailOtp, handleGoogleAuth, handleSendPhoneOtp,
-  handleVerifyPhoneOtp, handleLinkPhoneSubmit, handleLinkGoogleSubmit, handleCompleteRegistration,
+  handleSendEmailOtp, handleVerifyEmailOtp, handleEmailPasswordAuth, handleForgotPasswordSubmit, handleSendPhoneOtp,
+  handleVerifyPhoneOtp, handleLinkPhoneSubmit, handleCompleteRegistration,
   renderRateLimitMessage
 }) {
   return (
@@ -57,7 +58,7 @@ export default function AuthPageTablet({
       position: "relative",
       overflow: "hidden" 
     }}>
-      <div className="tablet-only" style={{ position: "absolute", top: "40px", left: "40px", zIndex: 20 }}>
+      <div className="desktop-only" style={{ position: "absolute", top: "40px", left: "60px", zIndex: 20 }}>
         <BrandLogo size="hero" style={{ filter: "drop-shadow(0 10px 30px rgba(59, 130, 246, 0.3))" }} clickable={false} />
       </div>
 
@@ -75,10 +76,15 @@ export default function AuthPageTablet({
            <button onClick={() => {
               if (step === "EMAIL_AUTH" || step === "OTP_VERIFICATION") {
                 setStep(authMode || "AUTH_HOME");
+                setOtpState("IDLE");
+              } else if (step === "FORGOT_PASSWORD") {
+                if (otpState === "VERIFIED") setOtpState("OTP_SENT");
+                else if (otpState === "OTP_SENT" || otpState === "ERROR") setOtpState("IDLE");
+                else setStep("LOG_IN");
               } else {
                 setStep("AUTH_HOME");
+                setOtpState("IDLE");
               }
-              setOtpState("IDLE");
               setOtp(""); setIsLoading(false);
            }} style={{ position: "absolute", top: "30px", left: "30px", background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", padding: 0, transition: "color 0.2s" }} onMouseEnter={(e)=>e.currentTarget.style.color="white"} onMouseLeave={(e)=>e.currentTarget.style.color="#94a3b8"}>
              <ArrowLeft size={20} />
@@ -89,14 +95,6 @@ export default function AuthPageTablet({
           {step === "AUTH_HOME" && "Join the community or log back in"}
           {step === "SIGN_UP" && "Create a new Dribbl.net account"}
           {step === "LOG_IN" && "Log in to your account"}
-          {step === "EMAIL_AUTH" && "Email Verification"}
-          {step === "OTP_VERIFICATION" && `OTP sent to ${email}`}
-          {step === "PHONE_INPUT" && "Enter your phone number"}
-          {step === "PHONE_OTP" && `OTP sent to ${countryCode} ${phone}`}
-          {step === "LINK_PROMPT" && "Account not found. Link an existing one?"}
-          {step === "LINK_PHONE" && "Verify your phone number"}
-          {step === "LINK_GOOGLE" && "Verify your Google email"}
-          {step === "NEW_PROFILE" && "Complete your profile"}
         </p>
 
         {step === "AUTH_HOME" && (
@@ -115,14 +113,11 @@ export default function AuthPageTablet({
             <button className="btn-primary" onClick={() => setStep("EMAIL_AUTH")} style={{ width: "100%", height: "56px", borderRadius: "14px", fontSize: "16px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <Mail size={18} /> Continue with Email
             </button>
-            <button onClick={() => setStep("PHONE_INPUT")} style={{ width: "100%", height: "56px", borderRadius: "14px", fontSize: "16px", fontWeight: "600", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s" }} onMouseEnter={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.1)"} onMouseLeave={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>
-              <Phone size={18} /> Continue with Phone Number
-            </button>
           </div>
         )}
-
-        {step === "EMAIL_AUTH" && (otpState === "IDLE" || otpState === "EMAIL_ENTERED" || otpState === "SENDING_OTP" || otpState === "ERROR") && (
-          <form onSubmit={handleSendEmailOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          
+        {step === "EMAIL_AUTH" && (
+          <form onSubmit={handleEmailPasswordAuth} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ position: "relative" }}>
               <Mail size={20} color="#64748b" style={{ position: "absolute", left: "16px", top: "18px" }} />
               <input 
@@ -131,7 +126,81 @@ export default function AuthPageTablet({
                 placeholder="name@example.com"
                 style={{ paddingLeft: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); if(otpState !== "IDLE" && otpState !== "EMAIL_ENTERED"){ setOtpState("EMAIL_ENTERED"); setOtp(""); } }}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                autoFocus
+                required
+              />
+            </div>
+            
+            {(authMode === "SIGN_UP" || authMode === "LOG_IN") && (
+              <div style={{ position: "relative" }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="input-modern" 
+                placeholder={authMode === "SIGN_UP" ? "Password (min 6 chars)" : "Password"}
+                style={{ paddingLeft: "16px", paddingRight: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                required={authMode === "SIGN_UP"}
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: "absolute", right: "16px", top: "18px", background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 0 }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            )}
+            
+            {authMode === "LOG_IN" && (
+              <div style={{ textAlign: "right", marginTop: "-12px" }}>
+                <button type="button" onClick={() => setStep("FORGOT_PASSWORD")} style={{ background: "none", border: "none", color: "var(--primary)", fontSize: "14px", fontWeight: "600", cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={(e)=>e.target.style.color="#60a5fa"} onMouseLeave={(e)=>e.target.style.color="var(--primary)"}>
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            <div>
+              <button type="submit" disabled={isLoading} className="btn-primary btn-hover-effect" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px", opacity: isLoading ? 0.6 : 1, transition: "all 0.2s" }}>
+                {authMode === "LOG_IN" ? (isLoading ? "Logging in..." : "Log In") : (isLoading ? "Signing up..." : "Sign Up")}
+              </button>
+            </div>
+
+            {authMode === "LOG_IN" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "4px 0" }}>
+                  <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)" }}></div>
+                  <span style={{ color: "#64748b", fontSize: "12px", fontWeight: "600" }}>OR</span>
+                  <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)" }}></div>
+                </div>
+
+                <div>
+                  <button type="button" onClick={handleSendEmailOtp} disabled={isLoading || otpState === "SENDING_OTP"} className="btn-primary" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", opacity: (isLoading || otpState === "SENDING_OTP") ? 0.6 : 1, transition: "opacity 0.2s" }}>
+                    {otpState === "SENDING_OTP" ? "Sending OTP..." : "Send OTP to Email"}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
+
+        {step === "FORGOT_PASSWORD" && otpState === "IDLE" && (
+          <form onSubmit={handleSendEmailOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: "0 0 8px 0" }}>Enter your registered email to receive a password reset code.</p>
+            <div style={{ position: "relative" }}>
+              <Mail size={20} color="#64748b" style={{ position: "absolute", left: "16px", top: "18px" }} />
+              <input 
+                type="email" 
+                className="input-modern" 
+                placeholder="name@example.com"
+                style={{ paddingLeft: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
                 onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
                 autoFocus
@@ -140,39 +209,86 @@ export default function AuthPageTablet({
             </div>
             <div>
               <button type="submit" disabled={otpState === "SENDING_OTP" || isRateLimited} className="btn-primary" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px", opacity: (otpState === "SENDING_OTP" || isRateLimited) ? 0.6 : 1, transition: "opacity 0.2s" }}>
-                {isRateLimited ? `Try again in ${countdownString}` : otpState === "SENDING_OTP" ? "Sending..." : "Email Verification"}
+                {isRateLimited ? `Try again in ${countdownString}` : otpState === "SENDING_OTP" ? "Sending..." : "Send Reset Code"}
               </button>
               {renderRateLimitMessage()}
             </div>
-            
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "8px 0" }}>
-              <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)" }}></div>
-              <span style={{ color: "#64748b", fontSize: "12px", fontWeight: "600" }}>OR</span>
-              <div style={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)" }}></div>
-            </div>
-
-            <button 
-              type="button"
-              onClick={handleGoogleAuth}
-              style={{ 
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", 
-                width: "100%", height: "56px", border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.05)", color: "white", fontSize: "16px", fontWeight: "600", cursor: "pointer",
-                borderRadius: "14px", transition: "background 0.2s"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-            >
-              <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              Continue with Google
-            </button>
           </form>
         )}
+
+        {step === "FORGOT_PASSWORD" && (otpState === "OTP_SENT" || otpState === "VERIFYING_OTP" || otpState === "ERROR") && (
+          <form onSubmit={handleVerifyEmailOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: "0 0 8px 0" }}>Enter the 6-digit code sent to {email}</p>
+            <div style={{ position: "relative" }}>
+              <input 
+                type="text" 
+                className="input-modern" 
+                placeholder="Enter 6-digit code"
+                style={{ paddingLeft: "16px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s", letterSpacing: "4px", textAlign: "center" }}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                maxLength={6}
+                autoFocus
+                required
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button type="submit" disabled={otp.length !== 6 || isLoading} className="btn-primary" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px", opacity: (otp.length !== 6 || isLoading) ? 0.6 : 1, transition: "opacity 0.2s" }}>
+                {isLoading ? "Verifying..." : "Verify Code"}
+              </button>
+              <button type="button" onClick={handleSendEmailOtp} disabled={isRateLimited || isLoading} style={{ background: "none", border: "none", color: "var(--primary)", fontSize: "14px", cursor: "pointer", opacity: (isRateLimited || isLoading) ? 0.5 : 1 }}>
+                {isRateLimited ? `Resend in ${countdownString}` : "Resend Code"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === "FORGOT_PASSWORD" && otpState === "VERIFIED" && (
+          <form onSubmit={handleForgotPasswordSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: "0 0 8px 0" }}>Create a new password for your account.</p>
+            <div style={{ position: "relative" }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="input-modern" 
+                placeholder="New Password (min 6 chars)"
+                style={{ paddingLeft: "16px", paddingRight: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                required
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: "absolute", right: "16px", top: "18px", background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 0 }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            <div style={{ position: "relative" }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="input-modern" 
+                placeholder="Confirm New Password"
+                style={{ paddingLeft: "16px", paddingRight: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                required
+              />
+            </div>
+            <div>
+              <button type="submit" disabled={isLoading} className="btn-primary" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px", opacity: isLoading ? 0.6 : 1, transition: "opacity 0.2s" }}>
+                {isLoading ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+          </form>
+        )}
+
 
         {step === "PHONE_INPUT" && (
           <form onSubmit={handleSendPhoneOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -268,10 +384,6 @@ export default function AuthPageTablet({
               <p style={{ margin: 0, fontSize: "14px", color: "#94a3b8", lineHeight: 1.5 }}>If you registered previously using a different method, link them now to retain your stats.</p>
             </div>
 
-            <button onClick={() => setStep("LINK_GOOGLE")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", width: "100%", height: "56px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "white", fontWeight: "600", cursor: "pointer", borderRadius: "14px", transition: "background 0.2s" }} onMouseEnter={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.1)"} onMouseLeave={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>
-              <LinkIcon size={18} /> Link Account
-            </button>
-
             <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "4px 0" }}>
               <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.1)" }}></div>
               <span style={{ color: "#64748b", fontSize: "12px", fontWeight: "600" }}>OR</span>
@@ -309,28 +421,6 @@ export default function AuthPageTablet({
           </form>
         )}
 
-        {step === "LINK_GOOGLE" && (
-          <form onSubmit={handleLinkGoogleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ position: "relative" }}>
-              <Mail size={20} color="#64748b" style={{ position: "absolute", left: "16px", top: "18px" }} />
-              <input 
-                type="email" 
-                className="input-modern" 
-                placeholder="Existing Google Email"
-                style={{ paddingLeft: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
-                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
-                autoFocus
-              />
-            </div>
-            <button type="submit" className="btn-primary" style={{ width: "100%", height: "56px", fontSize: "16px", fontWeight: "600", borderRadius: "14px" }}>
-              Verify & Link
-            </button>
-          </form>
-        )}
-
         {step === "NEW_PROFILE" && (
           <form onSubmit={handleCompleteRegistration} style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left" }}>
             
@@ -359,6 +449,25 @@ export default function AuthPageTablet({
                   style={{ paddingLeft: "16px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
+                  onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Phone Input */}
+            <div style={{ display: "flex", gap: "12px", width: "100%" }}>
+              <CountrySelector value={countryCode} onChange={setCountryCode} />
+              <div style={{ position: "relative", flex: 1 }}>
+                <Phone size={20} color="#64748b" style={{ position: "absolute", left: "16px", top: "18px" }} />
+                <input 
+                  type="tel" 
+                  className="input-modern" 
+                  placeholder="Mobile Number *"
+                  style={{ paddingLeft: "48px", height: "56px", fontSize: "16px", width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", color: "white", outline: "none", transition: "border-color 0.2s" }}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   onFocus={(e) => e.target.style.borderColor = "var(--primary)"}
                   onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
                   required

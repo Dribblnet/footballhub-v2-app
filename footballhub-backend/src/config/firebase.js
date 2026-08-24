@@ -1,9 +1,7 @@
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
-const admin = require('firebase-admin');
+const { getAuth } = require('firebase-admin/auth');
 const env = require('./env');
-
-
 
 // Env-based initialization (keep for production deployment):
 if (env.firebase.projectId && env.firebase.privateKey && env.firebase.clientEmail) {
@@ -17,13 +15,13 @@ if (env.firebase.projectId && env.firebase.privateKey && env.firebase.clientEmai
   console.log('Firebase Admin initialized successfully.');
 } else {
   console.warn('Firebase Admin SDK configuration incomplete. Firestore will not work until .env is properly set.');
-  // Initialize with default app for local testing without credentials (will fail on actual DB calls if unauthenticated)
   initializeApp();
 }
 
 const db = getFirestore();
+const auth = getAuth();
 
 module.exports = {
-  admin,
+  auth,
   db,
 };
