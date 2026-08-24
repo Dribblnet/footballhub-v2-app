@@ -200,29 +200,47 @@ class AuthService {
     try {
       let userRecord;
       try {
+        // CASE 1: Firebase user exists by email
         userRecord = await auth.getUserByEmail(email);
+        await auth.updateUser(userRecord.uid, { password: newPassword });
+        console.log(`[AUTH SERVICE] Password reset successful for: ${email}`);
       } catch (err) {
         if (err.code === 'auth/user-not-found') {
-          // Check if they exist in Firestore but not Firebase Auth (e.g. created via OTP)
+          // CASE 2/3: User not found by email, check existing Firestore UID
           const firestoreUser = await userService.findByEmail(email);
           if (firestoreUser) {
-            // Create them in Firebase Auth to bind the accounts and allow email/password login
-            userRecord = await auth.createUser({
-              uid: firestoreUser.id,
-              email: firestoreUser.email,
-              password: newPassword,
-              emailVerified: true
-            });
-            console.log(`[AUTH SERVICE] Created missing Firebase Auth profile for: ${email}`);
-            emailService.deleteResetToken(email);
-            return { success: true };
+            try {
+              // CASE 2: Firebase user ALREADY EXISTS with this UID (but maybe different/missing email)
+              userRecord = await auth.getUser(firestoreUser.id);
+              await auth.updateUser(userRecord.uid, {
+                email: firestoreUser.email,
+                password: newPassword,
+                emailVerified: true
+              });
+              console.log(`[AUTH SERVICE] Updated existing Firebase Auth profile via UID for: ${email}`);
+            } catch (uidErr) {
+              if (uidErr.code === 'auth/user-not-found') {
+                // CASE 3: Firebase user genuinely missing, provision it
+                userRecord = await auth.createUser({
+                  uid: firestoreUser.id,
+                  email: firestoreUser.email,
+                  password: newPassword,
+                  emailVerified: true
+                });
+                console.log(`[AUTH SERVICE] Created missing Firebase Auth profile for: ${email}`);
+              } else {
+                throw uidErr;
+              }
+            }
+          } else {
+             // User genuinely doesn't exist anywhere
+             throw err;
           }
+        } else {
+          throw err;
         }
-        throw err;
       }
 
-      await auth.updateUser(userRecord.uid, { password: newPassword });
-      console.log(`[AUTH SERVICE] Password reset successful for: ${email}`);
       emailService.deleteResetToken(email);
       return { success: true };
     } catch (firebaseError) {
