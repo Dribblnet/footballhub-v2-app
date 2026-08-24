@@ -1,8 +1,9 @@
+import ReportMenu from '../../../compliance/components/ReportMenu';
 import React from "react";
 import { ArrowLeft, User, Crown, Filter, MessageSquare, Calendar, ShieldCheck, Footprints, MapPin, Swords } from "lucide-react";
 import VerifiedBadge from "../../../../components/VerifiedBadge";
 import BrandLogo from "../../../../components/BrandLogo";
-import ResponsiveProfileHeader from "../../../../components/responsive/ResponsiveProfileHeader";
+import MobileProfileHeader from "../../../../components/responsive/MobileProfileHeader";
 
 const StatBox = ({ label, value, color }) => (
   <div className="glass-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "10px 5px" }}>
@@ -25,19 +26,25 @@ export default function PlayerProfileMobile(props) {
     bestDuo,
     matches,
     isMobile,
+    isOwnProfile,
+    joinedDateFormatted,
+    accountAgeDays,
+    playerPhone,
+    playerEmail,
+    openEditModal
   } = props;
 
   return (
-    <div style={{ width: "100%", margin: "0 auto", padding: "15px", boxSizing: "border-box", overflowX: "hidden" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px" }}>
-        <button onClick={() => navigate(-1)} style={{ background: "transparent", border: "none", color: "white", display: "flex", alignItems: "center" }}>
+    <div style={{ width: "100%", maxWidth: "100vw", margin: "0 auto", padding: "15px", boxSizing: "border-box", overflowX: "hidden", minWidth: 0 }}>
+      <header style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px", flexWrap: "wrap" }}>
+        <button onClick={() => navigate(-1)} style={{ background: "transparent", border: "none", color: "white", display: "flex", alignItems: "center", flexShrink: 0 }}>
           <ArrowLeft size={24} />
         </button>
-        <h2 style={{ margin: 0, flex: 1, fontSize: "20px" }}>Player Profile</h2>
-        <BrandLogo size="small" style={{ height: "24px" }} clickable={false} />
+        <h2 style={{ margin: 0, flex: "1 1 0", minWidth: 0, fontSize: "20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Player Profile</h2>
+        <BrandLogo size="small" style={{ height: "24px", flexShrink: 0 }} clickable={false} />
       </header>
 
-      <ResponsiveProfileHeader
+      <MobileProfileHeader
         name={player.name}
         username={player.username}
         bio={player.bio}
@@ -45,41 +52,63 @@ export default function PlayerProfileMobile(props) {
         emailVerified={player.emailVerified}
         phoneVerified={player.phoneVerified}
         topRightContent={
-          stats.captainAppearances > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--warning)", background: "rgba(245, 158, 11, 0.1)", padding: "5px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold" }}>
-              <Crown size={14} /> CAPTAIN ({stats.captainAppearances})
-            </div>
-          )
-        }
-        metadataContent={
           <>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-              <ShieldCheck size={14} color="var(--primary)" /> {position}
-            </span>
-            {player.teamName && (
-               <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-                 <ShieldCheck size={14} /> {player.teamName}
-               </span>
+            <ReportMenu playerId={player.id} />
+            {stats.captainAppearances > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--warning)", background: "rgba(245, 158, 11, 0.1)", padding: "5px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold" }}>
+                <Crown size={14} /> CAPTAIN ({stats.captainAppearances})
+              </div>
             )}
-            <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-              <User size={14} /> {player.gender} {player.age ? `• ${player.age} yrs` : ""}
-            </span>
-            {player.preferredFoot && (
-               <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-                 <Footprints size={14} /> {player.preferredFoot} Foot
-               </span>
-            )}
-            {player.city && (
-               <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-                 <MapPin size={14} /> {player.city}
-               </span>
-            )}
-            <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: "20px" }}>
-              <Calendar size={14} /> Joined {new Date(player.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-            </span>
           </>
         }
       />
+
+      {isOwnProfile && (
+        <button 
+          onClick={openEditModal}
+          className="btn-primary" 
+          style={{ width: "100%", padding: "12px", marginBottom: "20px", fontSize: "14px", fontWeight: "700", background: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.5)", color: "white" }}
+        >
+          EDIT PROFILE
+        </button>
+      )}
+
+      {/* IDENTITY EXTRA */}
+      <div className="glass-panel" style={{ padding: "15px", marginBottom: "15px" }}>
+        <h4 style={{ margin: "0 0 15px 0", color: "var(--accent)", fontSize: "16px" }}>Identity</h4>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Player ID</span> <strong>{player.id.substring(0, 8).toUpperCase()}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Position</span> <strong>{position || "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Gender</span> <strong>{player.gender || "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Age</span> <strong>{player.age ? `${player.age} yrs` : "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Preferred Foot</span> <strong>{player.preferredFoot ? `${player.preferredFoot} Foot` : "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Current Team</span> <strong>{player.teamName || "Not added"}</strong></div>
+        </div>
+      </div>
+
+      {/* CONTACT (Private) */}
+      {isOwnProfile && (
+        <div className="glass-panel" style={{ padding: "15px", marginBottom: "15px", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
+          <h4 style={{ margin: "0 0 15px 0", color: "var(--primary)", fontSize: "16px" }}>Contact (Private)</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}><span style={{ color: "var(--text-muted)", flexShrink: 0 }}>Email</span> <strong style={{ overflowWrap: "anywhere", wordBreak: "break-all", minWidth: 0, textAlign: "right" }}>{playerEmail || "Not added"}</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}><span style={{ color: "var(--text-muted)", flexShrink: 0 }}>Phone</span> <strong style={{ overflowWrap: "anywhere", wordBreak: "break-all", minWidth: 0, textAlign: "right" }}>{playerPhone || "Not added"}</strong></div>
+          </div>
+        </div>
+      )}
+
+      {/* LOCATION & ACCOUNT */}
+      <div className="glass-panel" style={{ padding: "15px", marginBottom: "30px" }}>
+        <h4 style={{ margin: "0 0 15px 0", color: "var(--text-main)", fontSize: "16px" }}>Location & Account</h4>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>City</span> <strong>{player.city || "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>State</span> <strong>{player.state || "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Country</span> <strong>{player.country || "Not added"}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Joined Dribbl</span> <strong>{joinedDateFormatted}</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--text-muted)" }}>Member For</span> <strong>{accountAgeDays === "N/A" ? "N/A" : `${accountAgeDays} days`}</strong></div>
+        </div>
+      </div>
+
       
       <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "30px" }}>
         <button 
@@ -127,7 +156,7 @@ export default function PlayerProfileMobile(props) {
           </select>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "15px", marginBottom: "30px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: "15px", marginBottom: "30px" }}>
         <StatBox label="Matches" value={stats.appearances} />
         {stats.motm > 0 && <StatBox label="MOTM 🏆" value={stats.motm} color="var(--warning)" />}
         {renderPositionStats()}
@@ -233,8 +262,8 @@ export default function PlayerProfileMobile(props) {
       <h3 style={{ marginBottom: "15px", fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
         Recent Form (Last 5 Matches)
       </h3>
-      {player.matchHistory.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "15px", textAlign: "center", color: "var(--text-muted)" }}>No match history found.</div>
+      {!(player.matchHistory && player.matchHistory.length > 0) ? (
+        <div className="glass-panel" style={{ padding: "30px", textAlign: "center", color: "var(--text-muted)" }}>No match history found.</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {player.matchHistory.slice(-5).reverse().map((h, i) => {

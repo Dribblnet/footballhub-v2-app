@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Trophy, Activity, Users } from "lucide-react";
+import { Trophy, Activity, Users, Home } from "lucide-react";
 import BrandLogo from "../BrandLogo";
 
 export default function BottomNav() {
@@ -7,7 +7,7 @@ export default function BottomNav() {
   const location = useLocation();
   
   const navItems = [
-    { label: "Home", icon: <BrandLogo size="small" style={{ height: "24px", width: "auto" }} clickable={false} />, path: "/" },
+    { label: "Home", icon: <Home size={24} />, path: "/" },
     { label: "Matches", icon: <Trophy size={24} />, path: "/history" },
     { label: "Market", icon: <Users size={24} />, path: "/marketplace" },
     { label: "Stats", icon: <Activity size={24} />, path: "/stats" },

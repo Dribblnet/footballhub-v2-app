@@ -10,7 +10,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://footballhub-backend.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       }
     }

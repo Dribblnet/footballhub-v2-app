@@ -171,9 +171,8 @@ const TournamentContext = createContext();
 
 export function TournamentProvider({ children }) {
   const [tournaments, setTournaments] = useState(() => {
-    // FORCE UPDATE FOR DEMO OVERHAUL
-    localStorage.setItem("v2_tournaments", JSON.stringify(INITIAL_TOURNAMENTS));
-    return INITIAL_TOURNAMENTS;
+    const saved = localStorage.getItem("v2_tournaments");
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {

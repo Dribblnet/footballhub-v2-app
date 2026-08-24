@@ -44,7 +44,7 @@ export default function SplashScreen({ onFinish }) {
         transition: "all 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)",
       }}>
         <BrandLogo 
-          size="hero" 
+          size="splash" 
           style={{ 
             filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.9)) drop-shadow(0 0 30px rgba(59, 130, 246, 0.4))",
           }} 

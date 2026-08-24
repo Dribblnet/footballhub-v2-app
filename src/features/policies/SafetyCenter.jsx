@@ -1,106 +1,121 @@
 import { useState } from "react";
-import { ArrowLeft, ShieldAlert, Flag, Ban, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Shield, Mail, FileText, AlertTriangle, UserX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SafetyCenter() {
   const navigate = useNavigate();
-  const [reportType, setReportType] = useState("");
+  const { user } = useAuth();
+  const [requestType, setRequestType] = useState("general");
+  const [description, setDescription] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleReport = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Report submitted to our Trust & Safety team. We will review it shortly.");
-    setReportType("");
+    // Simulate API request to backend ticketing system
+    console.log("Submitting Request:", {
+      userId: user?.id,
+      type: requestType,
+      description,
+      timestamp: new Date().toISOString(),
+      status: "Pending"
+    });
+    setSubmitted(true);
   };
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", minHeight: "calc(100vh - 80px)" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "40px" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px" }}>
         <button onClick={() => navigate(-1)} style={{ background: "transparent", border: "none", color: "white", display: "flex", alignItems: "center", cursor: "pointer" }}>
           <ArrowLeft size={24} />
         </button>
-        <h2 style={{ margin: 0, flex: 1, fontSize: "28px", fontWeight: "900", letterSpacing: "-0.5px" }}>Safety Center</h2>
+        <h2 style={{ margin: 0, flex: 1, fontSize: "24px", fontWeight: "800" }}>Help & Support</h2>
       </header>
 
-      <div className="glass-panel" style={{ padding: "40px", marginBottom: "30px", textAlign: "center", background: "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(239, 68, 68, 0.1))" }}>
-        <ShieldAlert size={48} color="var(--danger)" style={{ marginBottom: "20px" }} />
-        <h1 style={{ fontSize: "32px", fontWeight: "900", marginBottom: "15px", color: "white" }}>
-          Keeping Dribbl Safe
-        </h1>
-        <p style={{ fontSize: "16px", color: "var(--text-main)", lineHeight: "1.6", maxWidth: "600px", margin: "0 auto" }}>
-          We are committed to maintaining a safe, respectful, and fair community. 
-          Use the tools below to report inappropriate behavior, fake profiles, or unsafe conditions.
-        </p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "40px" }}>
+        
+        {/* Direct Contact Card */}
+        <div className="glass-panel" style={{ padding: "30px", textAlign: "center" }}>
+          <Mail size={40} color="var(--primary)" style={{ marginBottom: "15px" }} />
+          <h3 style={{ margin: "0 0 10px 0", color: "white" }}>Email Support</h3>
+          <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "20px" }}>
+            For direct inquiries, account issues, or general support, you can reach our team via email.
+          </p>
+          <a href="mailto:dribblnet@gmail.com" className="btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
+            dribblnet@gmail.com
+          </a>
+        </div>
+
+        {/* Safety & Moderation Card */}
+        <div className="glass-panel" style={{ padding: "30px", textAlign: "center" }}>
+          <Shield size={40} color="var(--accent)" style={{ marginBottom: "15px" }} />
+          <h3 style={{ margin: "0 0 10px 0", color: "white" }}>Trust & Safety</h3>
+          <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "20px" }}>
+            Report abusive behavior, harassment, or violations of our Community Guidelines.
+          </p>
+          <button onClick={() => { setRequestType("safety"); document.getElementById("support-form").scrollIntoView(); }} className="btn-primary" style={{ background: "var(--accent)" }}>
+            File a Report
+          </button>
+        </div>
+
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-        <div className="glass-panel" style={{ padding: "25px", cursor: "pointer" }} onClick={() => setReportType("player")}>
-          <Flag size={24} color="var(--warning)" style={{ marginBottom: "15px" }} />
-          <h3 style={{ fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>Report Player</h3>
-          <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>Report abusive language, unsportsmanlike conduct, or fake profiles.</p>
-        </div>
-
-        <div className="glass-panel" style={{ padding: "25px", cursor: "pointer" }} onClick={() => setReportType("team")}>
-          <Flag size={24} color="var(--accent)" style={{ marginBottom: "15px" }} />
-          <h3 style={{ fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>Report Team</h3>
-          <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>Report ringers, unregistered players, or team misconduct.</p>
-        </div>
-
-        <div className="glass-panel" style={{ padding: "25px", cursor: "pointer" }} onClick={() => setReportType("match")}>
-          <AlertTriangle size={24} color="var(--danger)" style={{ marginBottom: "15px" }} />
-          <h3 style={{ fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>Report Match</h3>
-          <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>Report unsafe pitches, referee abuse, or match fixing.</p>
-        </div>
-
-        <div className="glass-panel" style={{ padding: "25px", cursor: "pointer" }} onClick={() => setReportType("block")}>
-          <Ban size={24} color="var(--text-muted)" style={{ marginBottom: "15px" }} />
-          <h3 style={{ fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>Block User</h3>
-          <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>Prevent a specific user from contacting or interacting with you.</p>
-        </div>
-      </div>
-
-      {reportType && (
-        <div className="glass-panel" style={{ padding: "30px", border: "1px solid var(--border)", animation: "fadeIn 0.3s ease" }}>
-          <h3 style={{ fontSize: "20px", fontWeight: "800", marginBottom: "20px", textTransform: "capitalize" }}>
-            {reportType === "block" ? "Block User" : `Report ${reportType}`}
-          </h3>
-          <form onSubmit={handleReport} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div>
-              <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
-                {reportType === "match" ? "Match ID / Details" : "User/Team Name or ID"}
-              </label>
-              <input type="text" className="input-modern" placeholder="Required" required style={{ width: "100%" }} />
-            </div>
+      <div id="support-form" className="glass-panel" style={{ padding: "40px" }}>
+        <h3 style={{ margin: "0 0 20px 0", color: "white", fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <FileText size={20} color="var(--primary)" /> Submit a Request
+        </h3>
+        
+        {submitted ? (
+          <div style={{ padding: "30px", textAlign: "center", background: "rgba(16, 185, 129, 0.1)", border: "1px solid var(--accent)", borderRadius: "12px" }}>
+            <h4 style={{ color: "var(--accent)", margin: "0 0 10px 0", fontSize: "18px" }}>Request Submitted</h4>
+            <p style={{ color: "white", margin: 0 }}>Your request has been logged. Our support team will review it shortly. Internal Reference: #{Math.floor(Math.random() * 1000000)}</p>
+            <button onClick={() => setSubmitted(false)} className="btn-primary" style={{ marginTop: "20px" }}>Submit Another Request</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             
-            {reportType !== "block" && (
-              <div>
-                <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", color: "var(--text-muted)" }}>Reason</label>
-                <select className="input-modern" required style={{ width: "100%" }}>
-                  <option value="">Select a reason...</option>
-                  <option value="abuse">Abusive Language / Harassment</option>
-                  <option value="violence">Violent Conduct</option>
-                  <option value="fake">Fake Profile / Impersonation</option>
-                  <option value="spam">Spam / Scam</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            )}
+            <div>
+              <label style={{ display: "block", marginBottom: "8px", color: "var(--text-muted)", fontWeight: "600" }}>Request Type</label>
+              <select 
+                className="input-modern"
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value)}
+                required
+                style={{ textAlign: "left" }}
+              >
+                <option value="general">General Support</option>
+                <option value="account">Account Issue</option>
+                <option value="privacy">Privacy / Data Request</option>
+                <option value="safety">Safety / Abuse Report</option>
+                <option value="technical">Technical Problem</option>
+              </select>
+            </div>
 
             <div>
-              <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", color: "var(--text-muted)" }}>Additional Details</label>
-              <textarea className="input-modern" placeholder="Please provide more context..." rows={4} style={{ width: "100%", resize: "vertical" }}></textarea>
+              <label style={{ display: "block", marginBottom: "8px", color: "var(--text-muted)", fontWeight: "600" }}>Description</label>
+              <textarea 
+                className="input-modern"
+                rows="5"
+                placeholder="Please describe your issue or request in detail..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                style={{ textAlign: "left", resize: "vertical" }}
+              />
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <button type="submit" className="btn-primary" style={{ background: "var(--danger)", padding: "12px 24px" }}>
-                Submit Action
-              </button>
-              <button type="button" onClick={() => setReportType("")} style={{ background: "transparent", border: "1px solid var(--border)", color: "white", padding: "12px 24px", borderRadius: "12px", cursor: "pointer" }}>
-                Cancel
-              </button>
+            <div style={{ padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", fontSize: "13px", color: "var(--text-muted)" }}>
+              <AlertTriangle size={16} color="var(--warning)" style={{ verticalAlign: "middle", marginRight: "5px" }} />
+              If you are requesting a data export or account deletion, please allow up to 30 days for processing. You can also initiate account deletion from your Account Settings.
             </div>
+
+            <button type="submit" className="btn-primary">
+              Submit Request
+            </button>
           </form>
-        </div>
-      )}
+        )}
+      </div>
+
     </div>
   );
 }

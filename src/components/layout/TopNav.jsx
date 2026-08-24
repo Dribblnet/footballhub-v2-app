@@ -66,20 +66,16 @@ export default function TopNav() {
     }}>
       {/* Left Area */}
       <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
-        <BrandLogo size="small" />
+        <BrandLogo size="header" />
       </div>
       
       {/* Center Navigation (Desktop Only) */}
-      <div className="desktop-only" style={{ flex: 3, display: "flex", justifyContent: "center", alignItems: "center", gap: "clamp(12px, 2vw, 32px)", flexWrap: "wrap", margin: "0 20px" }}>
+      <div className="desktop-only" style={{ flex: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap", margin: "0 40px" }}>
         <button onClick={() => navigate("/")} style={getLinkStyle("/")}>Home</button>
         <button onClick={() => navigate("/create-match")} style={getLinkStyle("/create-match")}>Create Match</button>
         <button onClick={() => navigate("/search")} style={getLinkStyle("/search")}>Players</button>
-        <button onClick={() => navigate("/history")} style={getLinkStyle("/history")}>Matches</button>
-        <button onClick={() => navigate("/marketplace")} style={getLinkStyle("/marketplace")}>Marketplace</button>
-        <button onClick={() => navigate("/stats")} style={getLinkStyle("/stats")}>Stats</button>
+        <button onClick={() => navigate("/leaderboards")} style={getLinkStyle("/leaderboards")}>Leaderboard</button>
         <button onClick={() => navigate("/tournaments")} style={getLinkStyle("/tournaments")}>Tournaments</button>
-        <button onClick={() => navigate("/leaderboards")} style={getLinkStyle("/leaderboards")}>Leaderboards</button>
-        <button onClick={() => navigate("/turfs")} style={getLinkStyle("/turfs")}>Turfs</button>
       </div>
 
       {/* Right Area */}

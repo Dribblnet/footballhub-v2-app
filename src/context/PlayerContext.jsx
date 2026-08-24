@@ -24,8 +24,8 @@ export function PlayerProvider({ children }) {
   };
 
   const registerPlayer = (playerData) => {
-    // Destructure with defaults to support both old calls (if missed) and new object schema
     const {
+      id = null,
       name,
       displayName,
       position = "Unassigned",
@@ -40,6 +40,7 @@ export function PlayerProvider({ children }) {
       age = null,
       country = "",
       city = "",
+      state = "",
       teamName = "",
       preferredFoot = "",
       authMethod = "EMAIL",
@@ -63,7 +64,7 @@ export function PlayerProvider({ children }) {
     const autoUsername = `@${finalName.replace(/\s+/g, '').toLowerCase()}${Math.floor(Math.random() * 1000)}`;
 
     const newPlayer = {
-      id: crypto.randomUUID(),
+      id: id || crypto.randomUUID(),
       name: finalName,
       username: username || autoUsername,
       bio,
@@ -239,11 +240,12 @@ export function PlayerProvider({ children }) {
     return players.find(p => p.email === email);
   };
 
-  const updatePlayerIdentity = (playerId, identityUpdates) => {
-    setPlayers(prev => prev.map(p =>
-      p.id === playerId ? { ...p, ...identityUpdates } : p
-    ));
-  };
+    const updatePlayerIdentity = (playerId, identityUpdates) => {
+      const updatedPlayers = players.map(p =>
+        p.id === playerId ? { ...p, ...identityUpdates } : p
+      );
+      savePlayers(updatedPlayers);
+    };
 
   // Live Stat Linking function
   const recordPlayerEvent = (playerId, matchId, eventType, data = {}) => {

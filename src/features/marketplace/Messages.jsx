@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useMessages } from "../../context/MessageContext";
 import { usePlayers } from "../../context/PlayerContext";
+import { useAuth } from "../../context/AuthContext";
 import ResponsiveView from "../../components/layout/ResponsiveView";
 import MessagesMobile from "./components/messages/mobile/MessagesMobile";
 import MessagesDesktop from "./components/messages/desktop/MessagesDesktop";
@@ -11,11 +12,13 @@ export default function Messages() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const contact = searchParams.get("contact");
+  const contactIdParam = searchParams.get("contactId") || contact;
   const ref = searchParams.get("ref");
 
-  const { conversations, getMessages, sendMessage, initChat, blockUser, clearChat, blockedUsers, clearUnreadMessages } = useMessages();
+  const { conversations, getMessages, sendMessage, initChat, getConversationId, blockUser, clearChat, blockedUsers, clearUnreadMessages } = useMessages();
   const { players } = usePlayers();
-  const [activeChat, setActiveChat] = useState(contact || null);
+  const { user } = useAuth();
+  const [activeChat, setActiveChat] = useState(null);
   const [previewPlayerId, setPreviewPlayerId] = useState(null);
 
   const getPlayerByName = (name) => {
@@ -49,22 +52,46 @@ export default function Messages() {
   };
 
   useEffect(() => {
-    if (contact && ref) {
-      initChat(contact, ref);
+    if (contact && contactIdParam && user) {
+      const convId = initChat(contactIdParam, contact);
+      if (convId) {
+        setActiveChat(convId);
+      }
     }
-  }, [contact, ref, initChat]);
+  }, [contact, contactIdParam, user, initChat]);
 
   const messages = activeChat ? getMessages(activeChat) : [];
-  const contacts = Object.keys(conversations).filter(c => !blockedUsers.includes(c));
+  
+  // Extract contacts from conversations involving the current user
+  const contacts = user ? Object.values(conversations)
+    .filter(conv => conv.participants && Object.keys(conv.participants).includes(user.id))
+    .filter(conv => {
+       const otherUserId = Object.keys(conv.participants).find(id => id !== user.id);
+       return !blockedUsers.includes(otherUserId);
+    })
+    .map(conv => {
+       const otherUserId = Object.keys(conv.participants).find(id => id !== user.id);
+       return {
+         id: otherUserId,
+         name: conv.participants[otherUserId],
+         conversationId: conv.id
+       };
+    }) : [];
 
   const handleSend = () => {
-    if (!inputText.trim() || !activeChat) return;
-    sendMessage(activeChat, inputText, "You");
-    setInputText("");
+    if (!inputText.trim() || !activeChat || !user) return;
+    
+    // Find the other user's ID and Name from the active conversation
+    const activeConv = conversations[activeChat];
+    if (!activeConv) return;
 
-    setTimeout(() => {
-      sendMessage(activeChat, "Sounds good, let's coordinate the details.", activeChat);
-    }, 1500);
+    const otherUserId = Object.keys(activeConv.participants).find(id => id !== user.id);
+    const otherUserName = activeConv.participants[otherUserId];
+
+    if (!otherUserId) return;
+
+    sendMessage(otherUserId, otherUserName, inputText);
+    setInputText("");
   };
 
   const controllerProps = {
@@ -75,7 +102,7 @@ export default function Messages() {
     menuOpen, setMenuOpen,
     reportModal, setReportModal,
     inputText, setInputText,
-    players, contacts, messages, reportReasons,
+    players, contacts, messages, reportReasons, user, getConversationId,
     getPlayerByName, initChat, clearChat, blockUser, handleReportSubmit, handleSend
   };
 

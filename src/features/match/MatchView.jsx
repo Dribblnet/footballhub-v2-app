@@ -315,11 +315,11 @@ export default function MatchView() {
         {teamData.players.map(p => {
           const isRed = p.stats?.redCards > 0;
           return (
-            <div key={p.id} className="glass-panel" style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "12px", opacity: isRed ? 0.5 : 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <div key={p.id} className="glass-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "12px", gap: "10px", opacity: isRed ? 0.5 : 1 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
                 <button 
                   onClick={() => navigate(`/player/${p.id}`)} 
-                  style={{ background: "transparent", border: "none", color: p.isCaptain ? "var(--warning)" : "white", padding: 0, fontWeight: "700", cursor: "pointer", textDecoration: "underline", display: "flex", alignItems: "center", gap: "5px" }}
+                  style={{ background: "transparent", border: "none", color: p.isCaptain ? "var(--warning)" : "white", padding: 0, fontWeight: "700", cursor: "pointer", textDecoration: "underline", display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", justifyContent: "center" }}
                 >
                   {p.isCaptain && <Crown size={14} />} {p.name} {p.position === "GK" && <span style={{ color: "var(--accent)", fontSize: "12px", textDecoration: "none" }}>(GK)</span>}
                 </button>
@@ -331,7 +331,7 @@ export default function MatchView() {
               </div>
               
               {!isRed && match.state !== "FINISHED" && match.state !== "NOT_STARTED" && (
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
                   <button onClick={() => setGoalModal({ isOpen: true, team, scorerId: p.id, scorerName: p.name, step: 2, type: "GOAL", assistId: null, assistName: null })} className="btn-primary" style={{ padding: "6px 10px", fontSize: "14px", background: "rgba(255,255,255,0.1)", color: "white" }}>⚽</button>
                   <button onClick={() => setSubModal({ isOpen: true, team, playerOffId: p.id, playerOffName: p.name })} className="btn-primary" style={{ padding: "6px 10px", fontSize: "14px", background: "rgba(255,255,255,0.1)", color: "white" }}>🔄</button>
                   <button onClick={() => setFoulModal({ ...foulModal, isOpen: true, team, fouledPlayerId: p.id, fouledPlayerName: p.name })} className="btn-primary" style={{ padding: "6px 10px", fontSize: "14px", background: "rgba(255,255,255,0.1)" }}>⚖️</button>
@@ -341,7 +341,7 @@ export default function MatchView() {
                 </div>
               )}
               {match.state !== "FINISHED" && (
-                <div style={{ display: "flex", gap: "4px" }}>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", justifyContent: "center" }}>
                   <button onClick={() => setCaptain(id, team, p.id)} className="btn-primary" style={{ padding: "6px 10px", fontSize: "12px", background: p.isCaptain ? "var(--warning)" : "rgba(255,255,255,0.1)", color: p.isCaptain ? "black" : "white" }} title="Set Captain">©️</button>
                   <button onClick={() => setGoalkeeper(id, team, p.id)} className="btn-primary" style={{ padding: "6px 10px", fontSize: "12px", background: p.position === "GK" ? "var(--accent)" : "rgba(255,255,255,0.1)", color: p.position === "GK" ? "black" : "white" }} title="Set Goalkeeper">GK</button>
                   {match.state === "NOT_STARTED" && (
@@ -373,12 +373,12 @@ export default function MatchView() {
         {teamData.bench.map(p => {
           
           return (
-            <div key={p.id} className="glass-panel" style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "12px", opacity: p.isSubbedOff ? 0.6 : 1, border: p.isSubbedOff ? "1px dashed var(--border)" : "1px solid var(--border)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>{p.name} {p.isSubbedOff && "(Subbed Off)"}</span>
+            <div key={p.id} className="glass-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "12px", gap: "10px", opacity: p.isSubbedOff ? 0.6 : 1, border: p.isSubbedOff ? "1px dashed var(--border)" : "1px solid var(--border)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+                <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", justifyContent: "center" }}>{p.name} {p.isSubbedOff && "(Subbed Off)"}</span>
               </div>
               
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
                 {!p.isSubbedOff && match.state !== "FINISHED" && match.state !== "NOT_STARTED" && (
                   <button onClick={() => {
                      setSubModal({ isOpen: true, team, playerOnId: p.id, playerOnName: p.name, reverse: true });

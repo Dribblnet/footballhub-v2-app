@@ -29,7 +29,7 @@ export default function NotificationPanelTablet(props) {
         </button>
       </div>
 
-      <div style={{ maxHeight: "350px", overflowY: "auto", padding: "10px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
         {!notificationsEnabled ? (
           <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
             <BellOff size={32} style={{ opacity: 0.5, marginBottom: "10px" }} />

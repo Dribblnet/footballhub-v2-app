@@ -94,7 +94,8 @@ export default function MatchViewMobile(props) {
         display: "flex", flexDirection: "column", alignItems: "center", 
         marginBottom: "30px", background: "#0a0f1a", border: "1px solid rgba(255,255,255,0.1)", 
         borderRadius: "12px", padding: "0", overflow: "hidden", 
-        boxShadow: "0 20px 40px rgba(0,0,0,0.8)" 
+        boxShadow: "0 20px 40px rgba(0,0,0,0.8)",
+        width: "100%", boxSizing: "border-box"
       }}>
         
         <div style={{ display: "flex", width: "100%", alignItems: "stretch", minHeight: "80px" }}>
@@ -137,7 +138,7 @@ export default function MatchViewMobile(props) {
         </div>
 
         {/* TIMER & MOMENTUM STRIP */}
-        <div style={{ width: "100%", padding: "15px 20px", background: "#111827", display: "flex", flexDirection: "column", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ width: "100%", boxSizing: "border-box", padding: "15px 20px", background: "#111827", display: "flex", flexDirection: "column", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
 
         {/* TIMER ENGINE */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: (match.state === "FIRST_HALF" || match.state === "SECOND_HALF" || match.state.startsWith("EXTRA_TIME_")) ? "15px" : "0" }}>
@@ -297,12 +298,12 @@ export default function MatchViewMobile(props) {
               </button>
             )}
             {match.state === "FINISHED" && (
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <span style={{ color: "var(--danger)", fontWeight: "bold", padding: "10px 20px", background: "rgba(239, 68, 68, 0.1)", borderRadius: "20px" }}>MATCH ENDED</span>
+              <>
+                <span style={{ color: "var(--danger)", fontWeight: "bold", padding: "10px 20px", background: "rgba(239, 68, 68, 0.1)", borderRadius: "20px", textAlign: "center" }}>MATCH ENDED</span>
                 <button onClick={() => navigate(`/match-report/${id}`)} className="btn-primary" style={{ padding: "10px 20px", borderRadius: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
                   View Report
                 </button>
-              </div>
+              </>
             )}
             
             <button 

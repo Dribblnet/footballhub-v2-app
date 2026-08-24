@@ -6,10 +6,12 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePlayers } from "../../context/PlayerContext";
 import { useMatch } from "../match/MatchContext";
+import { useAuth } from "../../context/AuthContext";
 import { ArrowLeft, User, Crown, Filter, MessageSquare, Calendar, ShieldCheck, Footprints, MapPin, Swords } from "lucide-react";
 import VerifiedBadge from "../../components/VerifiedBadge";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import ResponsiveProfileHeader from "../../components/responsive/ResponsiveProfileHeader";
+import { useToast } from "../../context/ToastContext";
 
 const StatBox = ({ label, value, color }) => (
   <div className="glass-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 10px" }}>
@@ -21,13 +23,18 @@ const StatBox = ({ label, value, color }) => (
 export default function PlayerProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { players, getPlayerStats, evaluateAchievements } = usePlayers();
+  const { players, getPlayerStats, evaluateAchievements, updatePlayerIdentity } = usePlayers();
   const { matches } = useMatch();
+  const { user, updateUser } = useAuth();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { toast } = useToast();
   
   const [filterPosition, setFilterPosition] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
-  const player = players.find(p => p.id === id);
+  const contextPlayer = players.find(p => p.id === id);
+  const isOwnProfile = user?.id === id;
+  const player = isOwnProfile && user ? { ...user, ...contextPlayer } : contextPlayer;
 
   if (!player) return <div style={{ padding: "40px", textAlign: "center" }}>Player not found in global records.</div>;
 
@@ -135,6 +142,38 @@ export default function PlayerProfile() {
   }
 
 
+  const joinedDate = player?.createdAt ? new Date(player.createdAt) : null;
+  const joinedDateFormatted = joinedDate ? joinedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "Not available";
+  const accountAgeDays = joinedDate ? Math.floor((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24)) : "N/A";
+  const playerEmail = player?.email || null;
+  const playerPhone = player?.phoneNumber || player?.phone || null;
+
+  const handleSaveProfile = (updates) => {
+    if (!isOwnProfile) return;
+    
+    updateUser(updates);
+    updatePlayerIdentity(id, updates);
+    
+    setIsEditing(false);
+    toast.success("Profile updated successfully!");
+  };
+
+  const [editForm, setEditForm] = useState({
+    name: "", age: "", gender: "", position: "", country: "", city: ""
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      name: player.name || "",
+      age: player.age || "",
+      gender: player.gender || "",
+      position: player.position || "",
+      country: player.country || "",
+      city: player.city || ""
+    });
+    setIsEditing(true);
+  };
+
   const controllerProps = {
     player,
     navigate,
@@ -147,14 +186,96 @@ export default function PlayerProfile() {
     getCaptainWinRate,
     bestDuo,
     matches,
-    isMobile
+    isMobile,
+    isOwnProfile,
+    joinedDateFormatted,
+    accountAgeDays,
+    playerEmail,
+    playerPhone,
+    isEditing,
+    setIsEditing,
+    openEditModal,
+    handleSaveProfile
   };
 
   return (
-    <ResponsiveView
-      mobile={<PlayerProfileMobile {...controllerProps} />}
-      tablet={<PlayerProfileTablet {...controllerProps} />}
-      desktop={<PlayerProfileDesktop {...controllerProps} />}
-    />
+    <>
+      <ResponsiveView
+        mobile={<PlayerProfileMobile {...controllerProps} />}
+        tablet={<PlayerProfileTablet {...controllerProps} />}
+        desktop={<PlayerProfileDesktop {...controllerProps} />}
+      />
+
+      {isEditing && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(15, 23, 42, 0.9)", zIndex: 1000, backdropFilter: "blur(10px)",
+          display: "flex", justifyContent: "center", alignItems: "center", padding: "20px"
+        }}>
+          <div className="glass-panel animate-scale-in" style={{ padding: "30px", maxWidth: "450px", width: "100%", border: "1px solid var(--primary)", background: "rgba(15, 23, 42, 0.95)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", fontWeight: "800" }}>Edit Profile</h2>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "25px" }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>Name</label>
+                <input type="text" className="input-modern" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }} />
+              </div>
+              
+              <div style={{ display: "flex", gap: "15px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>Age</label>
+                  <input type="number" className="input-modern" value={editForm.age} onChange={e => setEditForm({...editForm, age: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>Gender</label>
+                  <select className="input-modern" value={editForm.gender} onChange={e => setEditForm({...editForm, gender: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }}>
+                    <option value="">Unspecified</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>Position</label>
+                <select className="input-modern" value={editForm.position} onChange={e => setEditForm({...editForm, position: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }}>
+                  <option value="GK">Goalkeeper (GK)</option>
+                  <option value="CB">Center Back (CB)</option>
+                  <option value="LB">Left Back (LB)</option>
+                  <option value="RB">Right Back (RB)</option>
+                  <option value="CDM">Defensive Mid (CDM)</option>
+                  <option value="CM">Central Mid (CM)</option>
+                  <option value="CAM">Attacking Mid (CAM)</option>
+                  <option value="LW">Left Winger (LW)</option>
+                  <option value="RW">Right Winger (RW)</option>
+                  <option value="ST">Striker (ST)</option>
+                </select>
+              </div>
+
+              <div style={{ display: "flex", gap: "15px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>City</label>
+                  <input type="text" className="input-modern" value={editForm.city} onChange={e => setEditForm({...editForm, city: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", marginBottom: "5px", color: "var(--text-muted)", fontSize: "12px", textTransform: "uppercase" }}>Country</label>
+                  <input type="text" className="input-modern" value={editForm.country} onChange={e => setEditForm({...editForm, country: e.target.value})} style={{ width: "100%", boxSizing: "border-box" }} />
+                </div>
+              </div>
+
+              <div style={{ marginTop: "10px", padding: "10px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", fontSize: "12px", color: "var(--text-muted)" }}>
+                Email and Phone can be updated in Settings.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button className="btn-primary" onClick={() => setIsEditing(false)} style={{ flex: 1, background: "transparent", border: "1px solid var(--border)", boxShadow: "none" }}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleSaveProfile(editForm)} style={{ flex: 1 }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

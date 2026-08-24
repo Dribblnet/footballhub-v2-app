@@ -5,12 +5,11 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function ProfileMenu({ isOpen, onClose }) {
   const navigate = useNavigate();
-  const { logout } = useAuth(); // Assuming there's a logout function in AuthContext
+  const { user, logout } = useAuth(); // Assuming there's a logout function in AuthContext
 
   if (!isOpen) return null;
 
   const menuItems = [
-    { name: "Profile", icon: <User size={16} />, action: () => navigate("/profile") },
     { name: "My Stats", icon: <Activity size={16} />, action: () => navigate("/stats") },
     { name: "My Teams", icon: <Users size={16} />, action: () => navigate("/teams") },
     { name: "Settings", icon: <Settings size={16} />, action: () => navigate("/settings") },
@@ -48,26 +47,6 @@ export default function ProfileMenu({ isOpen, onClose }) {
           </button>
         ))}
         
-        <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "8px 0" }}></div>
-        
-        <button
-          onClick={() => {
-            if (logout) logout();
-            navigate("/login");
-            onClose();
-          }}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", gap: "12px",
-            padding: "10px 12px", background: "transparent", border: "none",
-            color: "var(--danger)", fontSize: "14px", fontWeight: "600", borderRadius: "8px",
-            cursor: "pointer", textAlign: "left", transition: "background 0.2s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
       </div>
     </div>
   );

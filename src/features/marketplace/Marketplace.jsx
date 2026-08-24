@@ -87,6 +87,7 @@ export default function Marketplace() {
       time: formTime,
       duration: formDuration,
       author: user?.name || "You",
+      authorId: user?.id || "local-user",
       isTournament: formType === "Tournament Ad",
       entryFee: formType === "Tournament Ad" ? formEntryFee : undefined,
       prizeInfo: formType === "Tournament Ad" ? formPrizeInfo : undefined,

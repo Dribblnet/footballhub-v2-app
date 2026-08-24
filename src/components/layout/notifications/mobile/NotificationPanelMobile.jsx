@@ -21,15 +21,20 @@ export default function NotificationPanelMobile(props) {
           <BrandLogo size="small" style={{ height: "20px" }} clickable={false} /> 
           Notifications <span style={{ background: "var(--primary)", color: "white", fontSize: "10px", padding: "2px 6px", borderRadius: "10px" }}>{notifications.filter(n => !n.read).length}</span>
         </h3>
-        <button 
-          onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-          style={{ background: "transparent", border: "none", color: notificationsEnabled ? "var(--primary)" : "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: "600" }}
-        >
-          {notificationsEnabled ? <><Bell size={14} /> Enabled</> : <><BellOff size={14} /> Disabled</>}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {notificationsEnabled && notifications.length > 0 && (
+            <button onClick={clearAll} style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>Clear All</button>
+          )}
+          <button 
+            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+            style={{ background: "transparent", border: "none", color: notificationsEnabled ? "var(--primary)" : "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: "600" }}
+          >
+            {notificationsEnabled ? <><Bell size={14} /> Enabled</> : <><BellOff size={14} /> Disabled</>}
+          </button>
+        </div>
       </div>
 
-      <div style={{ maxHeight: "350px", overflowY: "auto", padding: "10px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
         {!notificationsEnabled ? (
           <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
             <BellOff size={32} style={{ opacity: 0.5, marginBottom: "10px" }} />
@@ -73,9 +78,8 @@ export default function NotificationPanelMobile(props) {
       </div>
       
       {notificationsEnabled && notifications.length > 0 && (
-        <div style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "center", alignItems: "center" }}>
           <button onClick={markAllRead} style={{ background: "transparent", border: "none", color: "var(--primary)", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>Mark all as read</button>
-          <button onClick={clearAll} style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>Clear All</button>
         </div>
       )}
     </div>

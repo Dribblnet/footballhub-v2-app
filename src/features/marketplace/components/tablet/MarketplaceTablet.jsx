@@ -474,7 +474,7 @@ export default function MarketplaceTablet(props) {
                 </button>
               ) : (
                 <button 
-                  onClick={() => navigate(`/messages?contact=${encodeURIComponent(req.author)}&ref=${encodeURIComponent(req.type)}`)} 
+                  onClick={() => navigate(`/messages?contact=${encodeURIComponent(req.author)}&contactId=${encodeURIComponent(req.authorId || "")}&ref=${encodeURIComponent(req.type)}`)} 
                   className="btn-primary" 
                   style={{ 
                     padding: "10px 20px", fontSize: "13px", borderRadius: "8px", letterSpacing: "1px", 
@@ -482,10 +482,12 @@ export default function MarketplaceTablet(props) {
                     color: req.type === "Tournament Ad" ? "black" : "white",
                     border: "none",
                     fontWeight: "800",
+                    display: "flex", alignItems: "center", gap: "8px",
                     boxShadow: req.type === "Tournament Ad" ? "0 4px 15px rgba(245, 158, 11, 0.4)" : "var(--glow-primary)"
                   }}
                 >
-                  {req.type === "Tournament Ad" ? "CONTACT ORGANIZER" : "CONNECT"}
+                  <MessageSquare size={16} />
+                  {req.type === "Tournament Ad" ? "CONTACT ORGANIZER" : "MESSAGE"}
                 </button>
               )}
             </div>

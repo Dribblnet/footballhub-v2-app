@@ -18,7 +18,8 @@ export default function GlobalSearch({ isOpen, onClose }) {
     if (isOpen && onClose) {
       onClose();
     }
-  }, [location.pathname, isOpen, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const { matches } = useMatch();
   const { requests } = useMarket();

@@ -1,201 +1,337 @@
-import { Camera, Hash, PlayCircle, MessageSquare, Briefcase, ArrowRight } from "lucide-react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Camera, AtSign, MessageCircle, Mail, MessageSquare } from "lucide-react";
 import BrandLogo from "../BrandLogo";
+import FeedbackModal from "./FeedbackModal";
 
 export default function Footer() {
   const location = useLocation();
+  const [showFeedback, setShowFeedback] = useState(false);
   
   const getLinkStyle = (path) => {
     // Exact match for Home, prefix match for others to prevent '/' being always active
-    const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+    const isActive = path === "/" ? location.pathname === "/" : (path !== "#" && location.pathname.startsWith(path));
     return {
       textDecoration: "none",
-      color: isActive ? "var(--primary)" : "inherit",
-      fontSize: "14px",
-      fontWeight: isActive ? "800" : "500",
+      color: isActive ? "var(--accent)" : "inherit",
+      fontSize: "15px",
+      fontWeight: isActive ? "700" : "500",
       transition: "all 0.2s ease",
-      textShadow: isActive ? "0 0 10px rgba(59, 130, 246, 0.5)" : "none",
-      display: "block",
-      padding: "2px 0"
+      display: "inline-block",
+      padding: "4px 0"
     };
   };
+
   return (
     <footer style={{
       position: "relative",
-      background: "#050a15", // Deep charcoal/midnight blue base
+      background: "#030712", // Deeper navy/black for premium feel
       color: "var(--text-muted)",
-      padding: "80px 20px 40px",
+      padding: "80px 20px 30px",
       marginTop: "auto",
       overflow: "hidden",
       borderTop: "1px solid rgba(255, 255, 255, 0.05)"
     }}>
       
-      {/* Stadium Glow Background Effects */}
+      {/* Subtle Background Glow */}
       <div style={{
         position: "absolute", top: 0, left: "20%", width: "40vw", height: "400px",
-        background: "radial-gradient(ellipse at top, rgba(37, 99, 235, 0.08), transparent 70%)",
-        pointerEvents: "none"
-      }} />
-      <div style={{
-        position: "absolute", top: 0, right: "10%", width: "30vw", height: "300px",
-        background: "radial-gradient(ellipse at top, rgba(245, 158, 11, 0.05), transparent 70%)",
+        background: "radial-gradient(ellipse at top, rgba(37, 99, 235, 0.05), transparent 70%)",
         pointerEvents: "none"
       }} />
 
       <div style={{
-        maxWidth: "1200px",
+        maxWidth: "1400px",
         margin: "0 auto",
         position: "relative",
         zIndex: 10
       }}>
         
-        {/* Main Grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "40px",
-          marginBottom: "60px"
-        }}>
+        {/* Main Footer Layout */}
+        <div className="footer-top-layout">
           
-          {/* 1. BRAND SECTION */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px", gridColumn: "1 / -1", '@media (min-width: 768px)': { gridColumn: "span 2" } }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <BrandLogo size="large" />
-            </div>
-            <p style={{ color: "var(--text-muted)", fontSize: "14px", lineHeight: "1.6", maxWidth: "300px", margin: "0 auto 20px", textAlign: "left" }}>
-              Your ultimate grassroots football community and match organization platform.
-            </p>
-          </div>
-
-          {/* 2. QUICK LINKS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <h4 style={{ color: "white", margin: 0, fontSize: "16px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Quick Links</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { label: "Home", path: "/" },
-                { label: "Matches", path: "/history" },
-                { label: "Marketplace", path: "/marketplace" },
-                { label: "Tournaments", path: "/tournaments" },
-                { label: "Turfs", path: "/turfs" },
-                { label: "Leaderboards", path: "/stats" }
-              ].map(link => (
-                <Link 
-                  key={link.label} 
-                  to={link.path} 
-                  className="footer-link" 
-                  style={getLinkStyle(link.path)}
-                  onClick={() => window.scrollTo(0, 0)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. INFORMATION */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <h4 style={{ color: "white", margin: 0, fontSize: "16px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Information</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { label: "About Us", path: "/policies" },
-                { label: "Contact Us", path: "#", onClick: (e) => { e.preventDefault(); window.open("mailto:support@Dribbl.net.com"); } },
-                { label: "Policies", path: "/policies" },
-                { label: "Privacy Policy", path: "/policies" },
-                { label: "Terms of Service", path: "/policies" },
-                { label: "Community Guidelines", path: "/policies" },
-                { label: "Tournament Rules", path: "/policies" }
-              ].map(link => (
-                <Link 
-                  key={link.label} 
-                  to={link.path} 
-                  className="footer-link" 
-                  style={getLinkStyle(link.path)}
-                  onClick={(e) => {
-                    if (link.onClick) {
-                      link.onClick(e);
-                    } else {
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. COMMUNITY & SOCIALS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <div>
-              <h4 style={{ color: "white", margin: "0 0 16px 0", fontSize: "16px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Community</h4>
-              <div style={{ display: "flex", gap: "12px" }}>
+          {/* Left Side: 4 Nav Columns */}
+          <div className="footer-nav-grid">
+            
+            {/* 1. PLATFORM */}
+            <div className="footer-col">
+              <h4 className="footer-heading">Platform</h4>
+              <div className="footer-links">
                 {[
-                  { icon: <Camera size={18} />, label: "Instagram" },
-                  { icon: <Hash size={18} />, label: "X (Twitter)" },
-                  { icon: <PlayCircle size={18} />, label: "YouTube" },
-                  { icon: <MessageSquare size={18} />, label: "Discord" },
-                  { icon: <Briefcase size={18} />, label: "LinkedIn" }
-                ].map((social, i) => (
-                  <Link key={i} to="#" className="social-icon" style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    width: "36px", height: "36px", borderRadius: "50%",
-                    background: "rgba(255,255,255,0.05)",
-                    color: "white", textDecoration: "none",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                  }} aria-label={social.label}>
-                    {social.icon}
+                  { label: "Home", path: "/" },
+                  { label: "Create Match", path: "/create-match" },
+                  { label: "Players", path: "/search" },
+                  { label: "Matches", path: "/history" },
+                  { label: "Tournaments", path: "/tournaments" },
+                  { label: "Leaderboard", path: "/leaderboards" }
+                ].map(link => (
+                  <Link key={link.label} to={link.path} className="footer-link" style={getLinkStyle(link.path)} onClick={() => window.scrollTo(0, 0)}>{link.label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. COMMUNITY / SECOND SECTION */}
+            <div className="footer-col">
+              <h4 className="footer-heading">Community</h4>
+              <div className="footer-links">
+                {[
+                  { label: "Find Players", path: "/search" },
+                  { label: "Stats", path: "/stats" },
+                  { label: "Marketplace", path: "/marketplace" }
+                ].map(link => (
+                  <Link key={link.label} to={link.path} className="footer-link" style={getLinkStyle(link.path)} onClick={() => window.scrollTo(0, 0)}>{link.label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. INFORMATION & SUPPORT */}
+            <div className="footer-col">
+              <h4 className="footer-heading">Information & Support</h4>
+              <div className="footer-links">
+                {[
+                  { label: "About Us", path: "/about" },
+                  { label: "Contact Us", path: "#", onClick: (e) => { e.preventDefault(); window.open("mailto:dribblnet@gmail.com"); } },
+                  { label: "Help Center", path: "/safety" },
+                  { label: "Privacy Policy", path: "/policies" },
+                  { label: "Terms of Service", path: "/policies" },
+                  { label: "Community Guidelines", path: "/policies" }
+                ].map(link => (
+                  <Link 
+                    key={link.label} 
+                    to={link.path} 
+                    className="footer-link" 
+                    style={getLinkStyle(link.path)}
+                    onClick={(e) => {
+                      if (link.onClick) link.onClick(e);
+                      else window.scrollTo(0, 0);
+                    }}
+                  >
+                    {link.label}
                   </Link>
                 ))}
               </div>
+            </div>
+
+            {/* 4. CONTACT */}
+            <div className="footer-col contact-col">
+              <h4 className="footer-heading">Contact</h4>
+              <div className="footer-links" style={{ gap: "16px" }}>
+                <a href="mailto:dribblnet@gmail.com" className="email-link">
+                  <Mail size={18} color="var(--accent)" />
+                  <span>dribblnet@gmail.com</span>
+                </a>
+                
+                <button 
+                  onClick={() => setShowFeedback(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white', padding: '10px 14px', borderRadius: '10px',
+                    fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                    transition: 'all 0.2s ease', width: 'fit-content'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                  }}
+                >
+                  <MessageSquare size={16} color="var(--accent)" />
+                  Suggestions & Feedback
+                </button>
+
+                <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.6", color: "var(--text-muted)", opacity: 0.8 }}>
+                  We're here to help with matches, players, accounts and general enquiries.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Side: Brand Section */}
+          <div className="footer-brand-section">
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "flex-start",
+              height: "clamp(60px, 8vw + 20px, 110px)",
+              width: "100%",
+              overflow: "hidden",
+              marginBottom: "16px"
+            }}>
+              <BrandLogo size="footer" />
+            </div>
+            
+            <p style={{ margin: "0 0 24px 0", fontSize: "15px", lineHeight: "1.6", color: "var(--text-muted)", opacity: 0.8 }}>
+              Your grassroots football community and match organization platform. Connect with players, organize matches, track performance and grow the game around you.
+            </p>
+            
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+              {/* Instagram */}
+              <a href="https://www.instagram.com/dribbl_net/" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Instagram">
+                <Camera size={18} />
+              </a>
+              {/* Threads */}
+              <a href="https://www.threads.net/@dribbl_net" target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Threads">
+                <AtSign size={18} />
+              </a>
+              {/* WhatsApp */}
+              <a href="https://wa.me/918866314448" target="_blank" rel="noopener noreferrer" className="social-icon whatsapp-icon" aria-label="WhatsApp">
+                <MessageCircle size={18} />
+              </a>
             </div>
           </div>
 
         </div>
 
         {/* BOTTOM BAR */}
-        <div style={{ 
-          display: "flex", flexDirection: "column", gap: "15px", alignItems: "center", justifyContent: "space-between",
-          paddingTop: "30px", borderTop: "1px solid rgba(255,255,255,0.05)",
-          textAlign: "center"
-        }} className="footer-bottom">
-          <p style={{ margin: 0, fontSize: "12px", opacity: 0.6 }}>
-            &copy; {new Date().getFullYear()} Dribbl.net. All rights reserved.
+        <div className="footer-bottom">
+          <p style={{ margin: 0 }}>
+            &copy; {new Date().getFullYear()} Dribbl. All rights reserved.
           </p>
-          <div style={{ display: "flex", gap: "20px", fontSize: "12px", opacity: 0.6 }}>
-            <span>Made for the beautiful game.</span>
-          </div>
         </div>
 
       </div>
 
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+
       <style>{`
-        /* Hover Effects */
-        .footer-link:hover {
-          color: white !important;
-          text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        .footer-top-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 60px;
+          margin-bottom: 60px;
+          align-items: flex-start;
         }
         
+        .footer-nav-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 40px;
+          flex: 1;
+          width: 100%;
+        }
+
+        .footer-brand-section {
+          flex: 0 0 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 100%;
+        }
+
+        .footer-heading {
+          color: white;
+          margin: 0 0 24px 0;
+          font-size: 16px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+
+        .footer-links {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .email-link {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          text-decoration: none;
+          color: white;
+          font-weight: 700;
+          font-size: 15px;
+          transition: all 0.2s ease;
+        }
+        
+        .email-link:hover {
+          color: var(--accent);
+        }
+
+        /* Hover Effects */
+        .footer-link {
+          position: relative;
+        }
+        
+        .footer-link:hover {
+          color: white !important;
+          transform: translateX(3px);
+        }
+
+        .social-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.05);
+          color: white;
+          text-decoration: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         .social-icon:hover {
-          background: var(--primary) !important;
-          transform: translateY(-3px) scale(1.05);
-          box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+          background: rgba(16, 185, 129, 0.1) !important; /* accent green bg */
+          color: var(--accent) !important;
+          border-color: var(--accent);
+          transform: translateY(-3px);
+          box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
         }
 
-        .newsletter-input:focus-within {
-          border-color: var(--primary) !important;
-          box-shadow: 0 0 0 1px var(--primary);
+        /* Distinctive WhatsApp Hover */
+        .whatsapp-icon:hover {
+          background: rgba(37, 211, 102, 0.15) !important;
+          color: #25D366 !important;
+          border-color: #25D366;
+          box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
         }
 
-        .btn-newsletter:hover {
-          background: #1d4ed8 !important; /* darker blue */
+        .footer-bottom {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding-top: 30px;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          text-align: center;
+          font-size: 14px;
+          color: var(--text-muted);
+          opacity: 0.6;
         }
 
-        /* Responsive */
-        @media (min-width: 768px) {
-          .footer-bottom {
-            flex-direction: row !important;
-            text-align: left !important;
+        /* Responsive Desktop */
+        @media (min-width: 1024px) {
+          .footer-top-layout {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
           }
+          
+          .footer-nav-grid {
+            flex: 2;
+            padding-right: 60px;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            grid-template-columns: repeat(4, 1fr);
+          }
+          
+          .footer-brand-section {
+            flex: 1;
+            max-width: 420px;
+            padding-left: 40px;
+          }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+           .footer-nav-grid {
+              grid-template-columns: repeat(2, 1fr);
+           }
         }
       `}</style>
     </footer>

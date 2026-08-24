@@ -14,6 +14,7 @@ import AuthPage from "./features/auth/AuthPage";
 import PlayerProfile from "./features/teams/PlayerProfile";
 import TeamProfile from "./features/teams/TeamProfile";
 import CreateTeam from "./features/teams/CreateTeam";
+import MyTeams from "./features/teams/MyTeams";
 import CreateTournament from "./features/tournaments/CreateTournament";
 import TournamentDashboard from "./features/tournaments/TournamentDashboard";
 import TournamentHub from "./features/tournaments/TournamentHub";
@@ -25,6 +26,7 @@ import Policies from "./features/policies/Policies";
 import About from "./features/policies/About";
 import SafetyCenter from "./features/policies/SafetyCenter";
 import Settings from "./features/auth/Settings";
+import FeedbackDashboard from "./features/admin/FeedbackDashboard";
 import { ToastProvider } from "./context/ToastContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { MarketProvider } from "./features/marketplace/MarketContext";
@@ -71,11 +73,13 @@ function App() {
                       <Route path="/player/:id" element={<PlayerProfile />} />
                       <Route path="/team/:id" element={<TeamProfile />} />
                       <Route path="/create-team" element={<CreateTeam />} />
+                      <Route path="/teams" element={<MyTeams />} />
                       <Route path="/create-tournament" element={<CreateTournament />} />
                       <Route path="/tournaments" element={<TournamentHub />} />
                       <Route path="/tournament/:id" element={<TournamentDashboard />} />
                       
                       <Route path="/stats" element={<StatsHub />} />
+              <Route path="/leaderboards" element={<StatsHub />} />
                       <Route path="/marketplace" element={<Marketplace />} />
                       <Route path="/messages" element={<Messages />} />
                       <Route path="/search" element={<GlobalPlayerSearch />} />
@@ -84,6 +88,7 @@ function App() {
                       <Route path="/about" element={<About />} />
                       <Route path="/safety" element={<SafetyCenter />} />
                       <Route path="/settings" element={<Settings />} />
+                      <Route path="/admin/feedback" element={<FeedbackDashboard />} />
                       
                         {/* Redirect /matches/live to dashboard for MVP ease */}
                         <Route path="/matches/live" element={<Dashboard />} />

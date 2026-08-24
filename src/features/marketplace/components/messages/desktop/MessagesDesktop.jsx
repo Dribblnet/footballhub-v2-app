@@ -11,9 +11,10 @@ export default function MessagesDesktop({
   menuOpen, setMenuOpen,
   reportModal, setReportModal,
   inputText, setInputText,
-  players, contacts, messages, reportReasons,
+  players, contacts, messages, reportReasons, user, getConversationId,
   getPlayerByName, initChat, clearChat, blockUser, handleReportSubmit, handleSend
 }) {
+  const activeContact = contacts.find(c => c.conversationId === activeChat);
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px", display: "flex", flexDirection: "column", height: "calc(100vh - 80px)" }}>
       <header style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
@@ -51,7 +52,11 @@ export default function MessagesDesktop({
               .map(p => (
                 <div 
                   key={p.id} 
-                  onClick={() => { initChat(p.name); setActiveChat(p.name); setUserSearch(""); }}
+                  onClick={() => { 
+                    const convId = initChat(p.id, p.name); 
+                    if(convId) setActiveChat(convId); 
+                    setUserSearch(""); 
+                  }}
                   style={{ 
                     padding: "15px", borderBottom: "1px solid var(--border)", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: "10px"
@@ -73,14 +78,14 @@ export default function MessagesDesktop({
               ))
           ) : contacts.map(c => (
             <div 
-              key={c} 
-              onClick={() => setActiveChat(c)}
+              key={c.id} 
+              onClick={() => setActiveChat(c.conversationId)}
               style={{ 
                 padding: "15px", 
                 borderBottom: "1px solid var(--border)", 
                 cursor: "pointer",
-                background: activeChat === c ? "rgba(59, 130, 246, 0.1)" : "transparent",
-                borderLeft: activeChat === c ? "3px solid var(--primary)" : "3px solid transparent",
+                background: activeChat === c.conversationId ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                borderLeft: activeChat === c.conversationId ? "3px solid var(--primary)" : "3px solid transparent",
                 display: "flex",
                 alignItems: "center",
                 gap: "10px"
@@ -90,16 +95,16 @@ export default function MessagesDesktop({
                 style={{ width: "35px", height: "35px", borderRadius: "50%", background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  const p = getPlayerByName(c);
+                  const p = getPlayerByName(c.name);
                   if (p) setPreviewPlayerId(p.id);
                 }}
               >
                 <User size={18} color="white" />
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontWeight: activeChat === c ? "700" : "500" }}>{c}</span>
+                <span style={{ fontWeight: activeChat === c.conversationId ? "700" : "500" }}>{c.name}</span>
                 {(() => {
-                  const p = getPlayerByName(c);
+                  const p = getPlayerByName(c.name);
                   if (p && (p.emailVerified || p.isVerified)) {
                     return <VerifiedBadge isEmailVerified={p.emailVerified || p.isVerified} isPhoneVerified={p.phoneVerified} showText={false} size={14} />;
                   }
@@ -132,14 +137,14 @@ export default function MessagesDesktop({
                 <div 
                   style={{ flex: 1, cursor: "pointer" }}
                   onClick={() => {
-                    const p = getPlayerByName(activeChat);
+                    const p = getPlayerByName(activeContact?.name);
                     if (p) setPreviewPlayerId(p.id);
                   }}
                 >
                   <h3 style={{ margin: 0, fontSize: "18px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    {activeChat}
+                    {activeContact?.name || "Chat"}
                     {(() => {
-                      const p = getPlayerByName(activeChat);
+                      const p = getPlayerByName(activeContact?.name);
                       if (p && (p.emailVerified || p.isVerified)) {
                         return <VerifiedBadge isEmailVerified={p.emailVerified || p.isVerified} isPhoneVerified={p.phoneVerified} showText={false} size={18} />;
                       }
@@ -171,7 +176,7 @@ export default function MessagesDesktop({
                         <Ban size={14} /> Block User
                       </button>
                       <button 
-                        onClick={() => { setReportModal({ isOpen: true, user: activeChat, reason: "", description: "" }); setMenuOpen(false); }}
+                        onClick={() => { setReportModal({ isOpen: true, user: activeContact?.name, reason: "", description: "" }); setMenuOpen(false); }}
                         style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px", background: "transparent", border: "none", color: "var(--warning)", cursor: "pointer", textAlign: "left", borderRadius: "4px" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(245, 158, 11, 0.1)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                       >
@@ -193,18 +198,18 @@ export default function MessagesDesktop({
                   </div>
                 ) : (
                   messages.map(msg => (
-                    <div key={msg.id} style={{ alignSelf: msg.sender === "You" ? "flex-end" : "flex-start", maxWidth: "70%" }}>
+                    <div key={msg.id} style={{ alignSelf: msg.senderId === user?.id ? "flex-end" : "flex-start", maxWidth: "70%" }}>
                       <div style={{ 
-                        background: msg.sender === "You" ? "var(--primary)" : "rgba(255,255,255,0.1)", 
+                        background: msg.senderId === user?.id ? "var(--primary)" : "rgba(255,255,255,0.1)", 
                         padding: "12px 16px", 
-                        borderRadius: msg.sender === "You" ? "15px 15px 0 15px" : "15px 15px 15px 0",
+                        borderRadius: msg.senderId === user?.id ? "15px 15px 0 15px" : "15px 15px 15px 0",
                         marginBottom: "4px",
                         fontSize: "15px"
                       }}>
                         {msg.text}
                       </div>
-                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: msg.sender === "You" ? "right" : "left", display: "flex", alignItems: "center", gap: "4px", justifyContent: msg.sender === "You" ? "flex-end" : "flex-start" }}>
-                        {msg.time} {msg.sender === "You" && <CheckCircle2 size={12} color="var(--accent)" />}
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: msg.senderId === user?.id ? "right" : "left", display: "flex", alignItems: "center", gap: "4px", justifyContent: msg.senderId === user?.id ? "flex-end" : "flex-start" }}>
+                        {msg.time} {msg.senderId === user?.id && <CheckCircle2 size={12} color="var(--accent)" />}
                       </div>
                     </div>
                   ))

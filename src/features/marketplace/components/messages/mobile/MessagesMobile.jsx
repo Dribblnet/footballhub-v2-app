@@ -11,9 +11,10 @@ export default function MessagesMobile({
   menuOpen, setMenuOpen,
   reportModal, setReportModal,
   inputText, setInputText,
-  players, contacts, messages, reportReasons,
+  players, contacts, messages, reportReasons, user, getConversationId,
   getPlayerByName, initChat, clearChat, blockUser, handleReportSubmit, handleSend
 }) {
+  const activeContact = contacts.find(c => c.conversationId === activeChat);
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", width: "100vw", overflowX: "hidden" }}>
       <header style={{ display: "flex", alignItems: "center", gap: "10px", padding: "15px", borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}>
@@ -24,7 +25,7 @@ export default function MessagesMobile({
           <ArrowLeft size={24} />
         </button>
         <h2 style={{ margin: 0, flex: 1, fontSize: "18px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {activeChat ? activeChat : "Messages"}
+          {activeContact ? activeContact.name : "Messages"}
         </h2>
         {activeChat && (
           <div style={{ position: "relative" }}>
@@ -46,7 +47,7 @@ export default function MessagesMobile({
                   <Ban size={14} /> Block User
                 </button>
                 <button 
-                  onClick={() => { setReportModal({ isOpen: true, user: activeChat, reason: "", description: "" }); setMenuOpen(false); }}
+                  onClick={() => { setReportModal({ isOpen: true, user: activeContact?.name, reason: "", description: "" }); setMenuOpen(false); }}
                   style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "12px 10px", background: "transparent", border: "none", color: "var(--warning)", cursor: "pointer", textAlign: "left", borderRadius: "4px" }}
                 >
                   <Flag size={14} /> Report User
@@ -77,7 +78,11 @@ export default function MessagesMobile({
                 .map(p => (
                   <div 
                     key={p.id} 
-                    onClick={() => { initChat(p.name); setActiveChat(p.name); setUserSearch(""); }}
+                    onClick={() => { 
+                      const convId = initChat(p.id, p.name); 
+                      if(convId) setActiveChat(convId); 
+                      setUserSearch(""); 
+                    }}
                     style={{ 
                       padding: "15px", borderBottom: "1px solid var(--border)", cursor: "pointer",
                       display: "flex", alignItems: "center", gap: "12px"
@@ -97,8 +102,8 @@ export default function MessagesMobile({
                 ))
             ) : contacts.map(c => (
               <div 
-                key={c} 
-                onClick={() => setActiveChat(c)}
+                key={c.id} 
+                onClick={() => setActiveChat(c.conversationId)}
                 style={{ 
                   padding: "15px", 
                   borderBottom: "1px solid var(--border)", 
@@ -112,16 +117,16 @@ export default function MessagesMobile({
                   style={{ width: "45px", height: "45px", borderRadius: "50%", background: "var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    const p = getPlayerByName(c);
+                    const p = getPlayerByName(c.name);
                     if (p) setPreviewPlayerId(p.id);
                   }}
                 >
                   <User size={22} color="white" />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, overflow: "hidden" }}>
-                  <span style={{ fontWeight: "500", fontSize: "16px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c}</span>
+                  <span style={{ fontWeight: "500", fontSize: "16px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</span>
                   {(() => {
-                    const p = getPlayerByName(c);
+                    const p = getPlayerByName(c.name);
                     if (p && (p.emailVerified || p.isVerified)) {
                       return <VerifiedBadge isEmailVerified={p.emailVerified || p.isVerified} isPhoneVerified={p.phoneVerified} showText={false} size={14} />;
                     }
@@ -148,19 +153,19 @@ export default function MessagesMobile({
                 </div>
               ) : (
                 messages.map(msg => (
-                  <div key={msg.id} style={{ alignSelf: msg.sender === "You" ? "flex-end" : "flex-start", maxWidth: "85%" }}>
+                  <div key={msg.id} style={{ alignSelf: msg.senderId === user?.id ? "flex-end" : "flex-start", maxWidth: "85%" }}>
                     <div style={{ 
-                      background: msg.sender === "You" ? "var(--primary)" : "rgba(255,255,255,0.1)", 
+                      background: msg.senderId === user?.id ? "var(--primary)" : "rgba(255,255,255,0.1)", 
                       padding: "10px 14px", 
-                      borderRadius: msg.sender === "You" ? "15px 15px 0 15px" : "15px 15px 15px 0",
+                      borderRadius: msg.senderId === user?.id ? "15px 15px 0 15px" : "15px 15px 15px 0",
                       marginBottom: "4px",
                       fontSize: "14px",
                       wordBreak: "break-word"
                     }}>
                       {msg.text}
                     </div>
-                    <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: msg.sender === "You" ? "right" : "left", display: "flex", alignItems: "center", gap: "4px", justifyContent: msg.sender === "You" ? "flex-end" : "flex-start" }}>
-                      {msg.time} {msg.sender === "You" && <CheckCircle2 size={12} color="var(--accent)" />}
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: msg.senderId === user?.id ? "right" : "left", display: "flex", alignItems: "center", gap: "4px", justifyContent: msg.senderId === user?.id ? "flex-end" : "flex-start" }}>
+                      {msg.time} {msg.senderId === user?.id && <CheckCircle2 size={12} color="var(--accent)" />}
                     </div>
                   </div>
                 ))
