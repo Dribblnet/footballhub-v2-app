@@ -7,6 +7,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Key: email, Value: { otp: string, expiresAt: number }
 const otpStore = new Map();
 
+// In-memory store for Password Reset Tokens
+// Key: email, Value: { token: string, expiresAt: number }
+const resetTokenStore = new Map();
+
 class EmailService {
   /**
    * Generates a random 6-digit OTP
@@ -90,6 +94,34 @@ class EmailService {
     const normalizedEmail = email.toLowerCase().trim();
     otpStore.delete(normalizedEmail);
     console.log(`[OTP DELETE] Deleted OTP for ${normalizedEmail}`);
+  }
+
+  storeResetToken(email, token) {
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const normalizedEmail = email.toLowerCase().trim();
+    resetTokenStore.set(normalizedEmail, { token, expiresAt });
+    console.log(`[RESET TOKEN DEBUG] Stored reset token for ${normalizedEmail}`);
+  }
+
+  verifyResetToken(email, token) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const record = resetTokenStore.get(normalizedEmail);
+    
+    if (!record) return false;
+    if (Date.now() > record.expiresAt) {
+      resetTokenStore.delete(normalizedEmail);
+      return false;
+    }
+    if (record.token === token) {
+      return true;
+    }
+    return false;
+  }
+
+  deleteResetToken(email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    resetTokenStore.delete(normalizedEmail);
+    console.log(`[RESET TOKEN DELETE] Deleted reset token for ${normalizedEmail}`);
   }
 
   /**

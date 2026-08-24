@@ -67,10 +67,17 @@ class AuthController {
 
   async verifyEmailOtp(req, res, next) {
     try {
-      const { email, otp, isSignup, password } = req.body;
-      console.log(`[AUTH CONTROLLER] Received verifyEmailOtp request for email: ${email}, otp: ${otp}, isSignup: ${isSignup}`);
+      const { email, otp, isSignup, password, intent } = req.body;
+      console.log(`[AUTH CONTROLLER] Received verifyEmailOtp request for email: ${email}, otp: ${otp}, isSignup: ${isSignup}, intent: ${intent}`);
+      
+      if (intent === 'reset') {
+        const { resetToken } = await authService.verifyResetOtp(email, otp);
+        console.log(`[AUTH CONTROLLER] Reset OTP verification successful for email: ${email}`);
+        return successResponse(res, { resetToken }, 'Email OTP verified successfully for password reset');
+      }
+
       const { user, token, firebaseToken, isNewUser } = await authService.verifyEmailOtpAndLogin(email, otp, isSignup, password);
-      console.log(`[AUTH CONTROLLER] Verification successful for email: ${email}`);
+      console.log(`[AUTH CONTROLLER] Login Verification successful for email: ${email}`);
       return successResponse(res, { user, token, firebaseToken, isNewUser }, 'Email OTP verified successfully');
     } catch (error) {
       console.error(`[AUTH CONTROLLER] Error verifying OTP for email: ${req.body.email}`, error);
@@ -80,11 +87,11 @@ class AuthController {
 
   async resetPassword(req, res, next) {
     try {
-      const { email, otp, newPassword } = req.body;
+      const { email, resetToken, newPassword } = req.body;
       if (!newPassword || newPassword.length < 6) {
          throw new Error("Password must be at least 6 characters.");
       }
-      await authService.resetPasswordWithOtp(email, otp, newPassword);
+      await authService.resetPasswordWithToken(email, resetToken, newPassword);
       return successResponse(res, { success: true }, 'Password updated successfully');
     } catch (error) {
       console.error(`[AUTH CONTROLLER] Error resetting password: ${req.body.email}`, error);

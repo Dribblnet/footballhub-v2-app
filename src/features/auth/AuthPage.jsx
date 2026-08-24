@@ -92,6 +92,7 @@ export default function AuthPage() {
   const [existingPlayer, setExistingPlayer] = useState(null);
   const [authUid, setAuthUid] = useState(null);
   const [backendToken, setBackendToken] = useState(null);
+  const [resetToken, setResetToken] = useState("");
   const [, setIsFirebaseVerified] = useState(false);
   const [isLoading, _setIsLoading] = useState(false);
 
@@ -335,7 +336,13 @@ export default function AuthPage() {
       const res = await fetch(`${API_URL}/auth/verify-email-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, otp, isSignup: authMode === "SIGN_UP", password }),
+        body: JSON.stringify({ 
+          email: normalizedEmail, 
+          otp, 
+          isSignup: authMode === "SIGN_UP", 
+          password,
+          intent: step === "FORGOT_PASSWORD" ? "reset" : "login"
+        }),
         signal: controller.signal
       });
       
@@ -365,6 +372,9 @@ export default function AuthPage() {
       console.log(`[AUTH DEBUG] Step changed to VERIFIED`);
       
       if (step === "FORGOT_PASSWORD") {
+        if (data.data?.resetToken) {
+          setResetToken(data.data.resetToken);
+        }
         return;
       }
       
@@ -553,7 +563,7 @@ export default function AuthPage() {
       const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: (email || "").toLowerCase().trim(), otp, newPassword: password })
+        body: JSON.stringify({ email: (email || "").toLowerCase().trim(), resetToken, newPassword: password })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Password reset failed");
@@ -561,6 +571,7 @@ export default function AuthPage() {
       toast.success("Your password has been updated successfully. You can now log in with your new password.");
       setStep("AUTH_HOME");
       setOtp("");
+      setResetToken("");
       setPassword("");
       setConfirmPassword("");
     } catch (err) {
