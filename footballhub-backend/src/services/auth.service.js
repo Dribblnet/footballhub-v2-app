@@ -198,7 +198,29 @@ class AuthService {
     // Now securely update Firebase Auth password
     const { auth } = require('../config/firebase');
     try {
-      const userRecord = await auth.getUserByEmail(email);
+      let userRecord;
+      try {
+        userRecord = await auth.getUserByEmail(email);
+      } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+          // Check if they exist in Firestore but not Firebase Auth (e.g. created via OTP)
+          const firestoreUser = await userService.findByEmail(email);
+          if (firestoreUser) {
+            // Create them in Firebase Auth to bind the accounts and allow email/password login
+            userRecord = await auth.createUser({
+              uid: firestoreUser.id,
+              email: firestoreUser.email,
+              password: newPassword,
+              emailVerified: true
+            });
+            console.log(`[AUTH SERVICE] Created missing Firebase Auth profile for: ${email}`);
+            emailService.deleteResetToken(email);
+            return { success: true };
+          }
+        }
+        throw err;
+      }
+
       await auth.updateUser(userRecord.uid, { password: newPassword });
       console.log(`[AUTH SERVICE] Password reset successful for: ${email}`);
       emailService.deleteResetToken(email);

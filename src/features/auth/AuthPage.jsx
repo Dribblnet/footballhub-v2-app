@@ -121,6 +121,7 @@ export default function AuthPage() {
   });
 
   useEffect(() => {
+    window.testSendOtp = handleSendEmailOtp;
     console.log("Component mounted");
     return () => {
       console.log("Component unmounted");
@@ -240,6 +241,7 @@ export default function AuthPage() {
   const handleSendEmailOtp = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     console.log("1 Button clicked");
+    window.handleSendEmailOtp = handleSendEmailOtp; // EXPOSE FOR TESTING
     
     const normalizedEmail = (email || "").toLowerCase().trim();
     if (!normalizedEmail.includes("@")) return toast.error("Enter a valid email address");
@@ -431,7 +433,14 @@ export default function AuthPage() {
           if (player.id) {
             updatePlayerIdentity(player.id, { isVerified: true, emailVerified: true });
           }
-          login({ ...player, isVerified: true, emailVerified: true, id: finalUid || player.id, token: backendToken });
+          login({
+            ...player,
+            name: player.name || player.displayName || player.email?.split('@')[0] || "Dribbl Player",
+            isVerified: true,
+            emailVerified: true,
+            id: finalUid || player.id,
+            token: backendToken
+          });
         } else {
           login({ 
             id: finalUid || crypto.randomUUID(),
@@ -532,7 +541,15 @@ export default function AuthPage() {
         
         if (player) {
           updatePlayerIdentity(player.id || profileId, { isVerified: true, emailVerified: true });
-          login({ ...player, isVerified: true, emailVerified: true, id: profileId, token: tokenToSave });
+          login({
+            ...player,
+            name: player.name || player.displayName || player.email?.split('@')[0] || "Dribbl Player",
+            position: player.position || player.preferredPosition || "",
+            isVerified: true,
+            emailVerified: true,
+            id: profileId,
+            token: tokenToSave
+          });
         } else {
           login({ 
             id: uid,

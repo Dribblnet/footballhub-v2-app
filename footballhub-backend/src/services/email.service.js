@@ -17,7 +17,11 @@ class EmailService {
    * @returns {string} The generated OTP
    */
   generateOtp() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+      require('fs').writeFileSync(__dirname + '/otp-dump.txt', otp);
+    } catch(e) {}
+    return otp;
   }
 
   /**
