@@ -60,11 +60,11 @@ export default function DashboardMobile({
 
         <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "var(--primary)", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "28px", fontWeight: "900", border: "3px solid rgba(255,255,255,0.2)" }}>
-            {fullPlayer.name.charAt(0).toUpperCase()}
+            {(fullPlayer.name || fullPlayer.displayName || "P").charAt(0).toUpperCase()}
           </div>
           <div style={{ textAlign: "center" }}>
             <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
-              {fullPlayer.name}
+              {fullPlayer.name || fullPlayer.displayName || "Dribbl Player"}
               <VerifiedBadge isEmailVerified={fullPlayer.emailVerified || fullPlayer.isVerified} isPhoneVerified={fullPlayer.phoneVerified} size={20} />
             </h1>
             <p style={{ margin: "5px 0 0 0", color: "var(--text-muted)", fontSize: "14px", fontWeight: "600" }}>

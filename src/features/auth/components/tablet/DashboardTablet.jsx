@@ -63,11 +63,11 @@ export default function DashboardTablet({
         <div style={{ position: "relative", zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "30px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <div style={{ width: "100px", height: "100px", borderRadius: "50%", background: "var(--primary)", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "36px", fontWeight: "900", border: "4px solid rgba(255,255,255,0.2)" }}>
-              {fullPlayer.name.charAt(0).toUpperCase()}
+              {(fullPlayer.name || fullPlayer.displayName || "P").charAt(0).toUpperCase()}
             </div>
             <div className="animate-slide-in">
               <h1 style={{ margin: 0, fontSize: "clamp(32px, 4vw, 42px)", fontWeight: "900", textShadow: "0 4px 20px rgba(0,0,0,0.9)", letterSpacing: "-0.02em", lineHeight: 1.1, display: "flex", alignItems: "center", gap: "12px" }}>
-                {fullPlayer.name}
+                {fullPlayer.name || fullPlayer.displayName || "Dribbl Player"}
                 <VerifiedBadge isEmailVerified={fullPlayer.emailVerified || fullPlayer.isVerified} isPhoneVerified={fullPlayer.phoneVerified} size={28} />
               </h1>
               <p style={{ margin: "8px 0 0 0", color: "var(--text-muted)", fontSize: "16px", fontWeight: "600", textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}>

@@ -65,7 +65,7 @@ export default function MessagesDesktop({
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
                   <div style={{ width: "35px", height: "35px", borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color: "white" }}>
-                    {p.name.charAt(0).toUpperCase()}
+                    {(p.name || p.displayName || "P").charAt(0).toUpperCase()}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

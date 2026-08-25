@@ -89,7 +89,7 @@ export default function MessagesMobile({
                     }}
                   >
                     <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold", color: "white" }}>
-                      {p.name.charAt(0).toUpperCase()}
+                      {(p.name || p.displayName || "P").charAt(0).toUpperCase()}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

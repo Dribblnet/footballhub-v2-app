@@ -15,7 +15,7 @@ const app = express();
 app.use(helmet()); // Security headers
 const corsOptions = {
   origin: ['http://localhost:5174', 'https://dribbl.net', 'https://www.dribbl.net'],
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200

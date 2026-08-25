@@ -96,7 +96,7 @@ export default function GlobalPlayerSearch() {
             onMouseLeave={(e) => e.currentTarget.style.background = "var(--bg-card)"}
           >
             <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "linear-gradient(135deg, var(--primary), #1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: "bold", color: "white" }}>
-              {player.name ? player.name.charAt(0).toUpperCase() : "P"}
+              {(player.name || player.displayName || "P").charAt(0).toUpperCase()}
             </div>
             
             <div style={{ flex: 1, minWidth: 0 }}>

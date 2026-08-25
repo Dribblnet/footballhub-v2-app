@@ -105,7 +105,7 @@ export default function StatsHubTablet({
                     </div>
                     
                     <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700" }}>
-                      {player.avatar ? <img src={player.avatar} alt={player.name} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : player.name.charAt(0)}
+                      {player.avatar ? <img src={player.avatar} alt={player.name || player.displayName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : (player.name || player.displayName || "P").charAt(0).toUpperCase()}
                     </div>
                     
                     <div>

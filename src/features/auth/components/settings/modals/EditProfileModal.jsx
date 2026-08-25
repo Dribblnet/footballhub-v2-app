@@ -12,7 +12,7 @@ export default function EditProfileModal({ onClose }) {
 
   const fullPlayer = players.find((p) => p.id === user.id) || user;
 
-  const [name, setName] = useState(fullPlayer.name || "");
+  const [name, setName] = useState(fullPlayer.name || fullPlayer.displayName || "");
   const [username, setUsername] = useState(fullPlayer.username || "");
   const [position, setPosition] = useState(fullPlayer.position || "");
   const [avatar, setAvatar] = useState(fullPlayer.avatar || "");
